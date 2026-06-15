@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Comparativo — Girasoles Park & Yelou</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8F9FC;color:#1A2B4A;min-height:100vh;font-size:14px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:#fff;border-bottom:1px solid #E2E8F0;position:sticky;top:0;z-index:10}
+.topbar-logo{display:flex;align-items:center;gap:12px}
+.logo-dots{display:flex;gap:4px}
+.dot{width:12px;height:12px;border-radius:50%}
+.topbar h1{font-size:16px;font-weight:800;color:#1A2B4A}
+.topbar-sub{font-size:11px;color:#6B7A92;margin-top:1px}
+.topbar-actions{display:flex;gap:10px;align-items:center}
+.btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;transition:all 0.12s}
+.btn-outline{background:#fff;color:#1A2B4A;border:1.5px solid #E2E8F0}
+.btn-outline:hover{border-color:#999}
+a.btn-link{text-decoration:none;color:#6B7A92;font-size:12px;font-weight:600;padding:7px 10px;border-radius:6px;transition:all 0.12s}
+a.btn-link:hover{background:#f0f0f0;color:#1A2B4A}
+
+/* Filtros */
+.controls{display:flex;gap:10px;align-items:center;padding:14px 24px;background:#fff;border-bottom:1px solid #E2E8F0}
+.controls select{padding:6px 10px;border:1.5px solid #E2E8F0;border-radius:7px;font-size:12px;background:#fff}
+.controls label{font-size:11px;font-weight:700;color:#6B7A92;text-transform:uppercase;letter-spacing:0.4px}
+.filter-sep{width:1px;height:22px;background:#E2E8F0}
+
+/* Grid principal */
+.content{padding:20px 24px}
+.dash-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.dash-header h2{font-size:13px;font-weight:800}
+.local-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.local-badge.g{background:#E8F5E3;color:#1E5C22}
+.local-badge.y{background:#FFF8DC;color:#8B6E00}
+
+/* KPI row comparativa */
+.kpi-compare{display:grid;grid-template-columns:1fr 60px 1fr;gap:0;margin-bottom:20px;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;background:#fff}
+.kpi-col{display:flex;flex-direction:column;gap:0}
+.kpi-cell{padding:14px 18px;border-bottom:1px solid #E2E8F0;display:flex;flex-direction:column}
+.kpi-cell:last-child{border-bottom:none}
+.kpi-label{font-size:10px;font-weight:700;color:#6B7A92;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px}
+.kpi-val{font-size:22px;font-weight:800;line-height:1}
+.kpi-cell.g .kpi-val{color:#1E5C22}
+.kpi-cell.y .kpi-val{color:#8B6E00}
+.kpi-center{background:#F8F9FC;display:flex;flex-direction:column}
+.kpi-center-cell{flex:1;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#6B7A92;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #E2E8F0;padding:4px 2px;text-align:center;writing-mode:initial}
+.kpi-center-cell:last-child{border-bottom:none}
+
+/* Columnas lado a lado */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.panel-col{display:flex;flex-direction:column;gap:14px}
+.col-header{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;margin-bottom:4px}
+.col-header.g{background:#1A3320;color:#fff}
+.col-header.y{background:#1a1a1a;color:#fff}
+.col-header h3{font-size:12px;font-weight:700}
+.card{background:#fff;border-radius:10px;border:1px solid #E2E8F0;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #E2E8F0}
+.card-title{font-size:12px;font-weight:700;color:#1A2B4A}
+.card-body{padding:14px 16px}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.badge-gray{background:#f0f0f2;color:#6B7A92}
+.badge-grass{background:#E8F5E3;color:#1E5C22}
+.badge-coral{background:#FAECE7;color:#712B13}
+.badge-g{background:#E8F5E3;color:#1E5C22}
+.badge-y{background:#FFF8DC;color:#8B6E00}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:#F8F9FC;color:#6B7A92;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;padding:7px 10px;text-align:left;border-bottom:1px solid #E2E8F0;white-space:nowrap}
+tbody tr{border-bottom:1px solid #E2E8F0}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:7px 10px;vertical-align:middle}
+.empty{text-align:center;padding:30px 16px;color:#6B7A92;font-size:12px}
+.empty span{display:block;font-size:24px;margin-bottom:6px}
+.bar-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #E2E8F0}
+.bar-row:last-child{border-bottom:none}
+.bar-label{font-size:11px;width:90px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;background:#F0F0F0;border-radius:3px;height:6px;overflow:hidden}
+.bar-val{font-size:10px;font-weight:700;color:#6B7A92;width:28px;text-align:right;flex-shrink:0}
+.bar-fill-g{height:100%;background:#3B8040;border-radius:3px}
+.bar-fill-y{height:100%;background:#D4A800;border-radius:3px}
+.inv-tag{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600}
+.inv-g{background:#E8F5E3;color:#1E5C22}
+.inv-y{background:#FFF8DC;color:#8B6E00}
+
+/* Sección global */
+.section-title{font-size:11px;font-weight:700;color:#6B7A92;text-transform:uppercase;letter-spacing:0.6px;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:#E2E8F0}
+.global-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:10px;padding:14px;border:1px solid #E2E8F0}
+.stat-card .label{font-size:10px;color:#6B7A92;font-weight:700;text-transform:uppercase;letter-spacing:0.4px}
+.stat-card .value{font-size:24px;font-weight:800;margin-top:3px}
+.stat-card .sub{font-size:10px;color:#6B7A92;margin-top:2px}
+.hoy-ev{padding:8px 10px;border-radius:7px;margin-bottom:6px;background:#F8F9FC;border:1px solid #E2E8F0}
+.hoy-ev-name{font-size:12px;font-weight:700}
+.hoy-ev-meta{font-size:10px;color:#6B7A92;margin-top:2px}
+.hoy-ev-pago{font-size:11px;margin-top:3px}
+
+/* Loading */
+#loading{position:fixed;inset:0;background:#1A2B4A;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,0.2);border-top-color:#F5C842;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{color:rgba(255,255,255,0.5);font-size:12px}
+</style>
+</head>
+<body>
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Cargando datos de ambos locales…</p>
+</div>
+
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-dots">
+      <div class="dot" style="background:#3B8040"></div>
+      <div class="dot" style="background:#D4E827"></div>
+      <div class="dot" style="background:#FFD700"></div>
+    </div>
+    <div>
+      <h1>Dashboard Comparativo</h1>
+      <div class="topbar-sub">Girasoles Park & Yelou — Vista unificada</div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <a href="girasoles.html" class="btn btn-link">🌻 Girasoles Park →</a>
+    <a href="yelou.html" class="btn btn-link">☀️ Yelou →</a>
+    <a href="index.html" class="btn btn-outline">← Inicio</a>
+  </div>
+</div>
+
+<div class="controls">
+  <label>Año:</label>
+  <select id="ctrl-anio" onchange="renderAll()"><option value="">Todos</option></select>
+  <div class="filter-sep"></div>
+  <label>Período:</label>
+  <select id="ctrl-mes" onchange="renderAll()">
+    <option value="">Todos los meses</option>
+    <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
+    <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
+    <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
+    <option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option>
+  </select>
+  <div class="filter-sep"></div>
+  <span id="ctrl-total-label" style="font-size:12px;color:#6B7A92"></span>
+</div>
+
+<div class="content">
+  <!-- KPI COMPARATIVA -->
+  <div class="section-title">📊 Métricas clave</div>
+  <div class="kpi-compare">
+    <div class="kpi-col" id="kpi-g"></div>
+    <div class="kpi-center" id="kpi-labels">
+      <div class="kpi-center-cell">Reservas</div>
+      <div class="kpi-center-cell">Cobrado</div>
+      <div class="kpi-center-cell">Este mes</div>
+      <div class="kpi-center-cell">Hoy</div>
+      <div class="kpi-center-cell">Pendientes</div>
+    </div>
+    <div class="kpi-col" id="kpi-y"></div>
+  </div>
+
+  <!-- COLUMNAS LADO A LADO -->
+  <div class="section-title">📅 Hoy y próximas reservas</div>
+  <div class="split">
+    <div class="panel-col">
+      <div class="col-header g"><h3>🌻 Girasoles Park</h3></div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Reservas de hoy</div><span class="badge badge-g" id="g-hoy-count">0</span></div>
+        <div class="card-body" id="g-hoy-list"><div class="empty"><span>🎈</span>Sin reservas hoy</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Próximas (7 días)</div></div>
+        <div class="card-body" id="g-prox-list"><div class="empty"><span>🗓️</span>Sin próximas</div></div>
+      </div>
+    </div>
+    <div class="panel-col">
+      <div class="col-header y"><h3>☀️ Yelou</h3></div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Reservas de hoy</div><span class="badge badge-y" id="y-hoy-count">0</span></div>
+        <div class="card-body" id="y-hoy-list"><div class="empty"><span>🎈</span>Sin reservas hoy</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Próximas (7 días)</div></div>
+        <div class="card-body" id="y-prox-list"><div class="empty"><span>🗓️</span>Sin próximas</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANÁLISIS LADO A LADO -->
+  <div class="section-title">📈 Análisis comparativo</div>
+  <div class="split">
+    <div class="card">
+      <div class="card-header"><div class="card-title">🏆 Planes más populares por local</div></div>
+      <div class="card-body" id="planes-compare"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">🎨 Temáticas más pedidas</div></div>
+      <div class="card-body" id="temas-compare"></div>
+    </div>
+  </div>
+
+  <!-- PENDIENES GLOBALES -->
+  <div class="section-title">⚠️ Saldos pendientes</div>
+  <div class="split">
+    <div class="card">
+      <div class="card-header"><div class="card-title">🌻 Girasoles Park — Pendientes</div><span id="g-pend-count" class="badge badge-coral">0</span></div>
+      <div class="card-body" id="g-pend-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">☀️ Yelou — Pendientes</div><span id="y-pend-count" class="badge badge-coral">0</span></div>
+      <div class="card-body" id="y-pend-list"></div>
+    </div>
+  </div>
+
+  <!-- TABLA GLOBAL -->
+  <div class="section-title">📋 Todas las reservas — vista combinada</div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Reservas combinadas <span id="global-count" class="badge badge-gray" style="margin-left:6px">0</span></div>
+      <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="exportCSV()">📥 CSV</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Local</th><th>Fecha</th><th>Plan</th><th>Cumpleañer@</th><th>Apoderado</th><th>Monto</th><th>Estado</th></tr></thead>
+        <tbody id="global-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FIREBASE_CONFIG = {
+  apiKey: "REEMPLAZA_AQUI",
+  authDomain: "REEMPLAZA_AQUI.firebaseapp.com",
+  projectId: "REEMPLAZA_AQUI",
+  storageBucket: "REEMPLAZA_AQUI.appspot.com",
+  messagingSenderId: "REEMPLAZA_AQUI",
+  appId: "REEMPLAZA_AQUI"
+};
+
+let dataG = [], dataY = [];
+const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function fmtF(d){ if(!d)return'–'; const dt=d instanceof Date?d:new Date(d); return isNaN(dt)?String(d):dt.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function fmtM(n){ return n!=null&&n!==''?'$'+Number(n).toLocaleString('es-CL'):'–'; }
+function isoDate(d){ if(!d)return''; const dt=d instanceof Date?d:new Date(d); return isNaN(dt)?'':dt.toISOString().split('T')[0]; }
+function pend(r){ return (Number(r.monto)||0)-(Number(r.pagado)||0); }
+function getTipo(r){ return r.tipo||((r.plan||'').toLowerCase().includes('paseo')?'paseo':'cumple'); }
+
+async function load(){
+  let useFirebase=false;
+  try{
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db = getFirestore(app);
+    const [snapG, snapY] = await Promise.all([
+      getDocs(query(collection(db,'girasoles_reservas'),orderBy('fecha','desc'))),
+      getDocs(query(collection(db,'yelou_reservas'),orderBy('fecha','desc')))
+    ]);
+    dataG = snapG.docs.map(d=>{const dt=d.data();return{id:d.id,...dt,fecha:dt.fecha?.toDate?dt.fecha.toDate():new Date(dt.fecha)};});
+    dataY = snapY.docs.map(d=>{const dt=d.data();return{id:d.id,...dt,fecha:dt.fecha?.toDate?dt.fecha.toDate():new Date(dt.fecha)};});
+    useFirebase=true;
+  }catch(e){}
+  if(!useFirebase){ dataG=getDemoData('G'); dataY=getDemoData('Y'); }
+  populateAnios(); renderAll();
+  document.getElementById('loading').style.display='none';
+}
+
+function getDemoData(local){
+  const data=[];
+  const planes=['PM A','PM B','AM A','AM B','PM C','PASEO PM'];
+  const temas=['Paw Patrol','Frozen','Sonic','Minecraft','Bluey','Spider-Man','Princesas','Mario Bros'];
+  const aps=['Carolina','Pamela','Valentina','Daniela','Marcela','Bárbara'];
+  const ns=['Luciana','Martín','Sofía','Benjamín','Valentina','Mateo'];
+  const bancos=['Santander','BCI','Chile','Transbank','Scotiabank'];
+  for(let y=2022;y<=2026;y++){
+    const n=y===2026?6:Math.floor(Math.random()*18+8);
+    for(let i=0;i<n;i++){
+      const d=new Date(y,Math.floor(Math.random()*12),Math.floor(Math.random()*28)+1);
+      const monto=[260000,280000,300000,490000][Math.floor(Math.random()*4)];
+      const pagado=Math.random()>0.25?monto:(Math.random()>0.5?0:monto/2);
+      data.push({id:'demo_'+local+'_'+y+'_'+i,fecha:d,dia:['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getDay()],
+        tipo:Math.random()>0.15?'cumple':'paseo',plan:planes[Math.floor(Math.random()*planes.length)],
+        cumple:ns[Math.floor(Math.random()*ns.length)],apoderado:aps[Math.floor(Math.random()*aps.length)],
+        fono:'9'+Math.floor(Math.random()*90000000+10000000),
+        monto,pagado,banco:pagado>0?bancos[Math.floor(Math.random()*bancos.length)]:'',
+        boleta:pagado>0?String(Math.floor(Math.random()*50)+1):'',
+        inv:temas[Math.floor(Math.random()*temas.length)],cobrador:'Claudia',obs:''});
+    }
+  }
+  // Uno para hoy
+  const hoy=new Date();
+  data.push({id:'hoy_'+local,fecha:new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()),
+    dia:'Hoy',tipo:'cumple',plan:'PM A',cumple:local==='G'?'Sofía':'Martín',
+    apoderado:local==='G'?'Carolina G.':'Rodrigo P.',fono:'987654321',
+    monto:280000,pagado:local==='G'?280000:150000,banco:'Santander',boleta:'42',inv:'Frozen',cobrador:'Claudia',obs:''});
+  return data;
+}
+
+function populateAnios(){
+  const all=[...dataG,...dataY];
+  const anios=[...new Set(all.map(r=>new Date(r.fecha).getFullYear()))].filter(Boolean).sort((a,b)=>b-a);
+  const sel=document.getElementById('ctrl-anio');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todos los años</option>'+anios.map(a=>`<option value="${a}">${a}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+
+function getFiltered(data){
+  let rs=[...data];
+  const anio=document.getElementById('ctrl-anio').value;
+  const mes=document.getElementById('ctrl-mes').value;
+  if(anio)rs=rs.filter(r=>new Date(r.fecha).getFullYear()==Number(anio));
+  if(mes!=='')rs=rs.filter(r=>new Date(r.fecha).getMonth()==Number(mes));
+  return rs;
+}
+
+window.renderAll=function(){
+  const G=getFiltered(dataG), Y=getFiltered(dataY);
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const inicioMes=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  const finMes=new Date(hoy.getFullYear(),hoy.getMonth()+1,0);
+  const fin7=new Date(hoy);fin7.setDate(fin7.getDate()+7);
+
+  function stats(rs){
+    const mes=rs.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f>=inicioMes&&f<=finMes;});
+    const h=rs.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f.getTime()===hoy.getTime();});
+    const p=rs.filter(r=>pend(r)>0);
+    return{total:rs.length,cobrado:rs.reduce((s,r)=>s+(Number(r.pagado)||0),0),mes:mes.length,hoy:h,prox:rs.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f>hoy&&f<=fin7;}).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)),pend:p};
+  }
+  const sg=stats(G), sy=stats(Y);
+
+  // Label total
+  document.getElementById('ctrl-total-label').textContent=`Total: ${G.length+Y.length} reservas (🌻${G.length} + ☀️${Y.length})`;
+
+  // KPI comparativa
+  function kpiCells(st,cls){
+    return['total','cobrado','mes','hoy','pend'].map((k,i)=>{
+      let val;
+      if(k==='total')val=st.total;
+      else if(k==='cobrado')val=fmtM(st.cobrado);
+      else if(k==='mes')val=st.mes;
+      else if(k==='hoy')val=st.hoy.length;
+      else val=st.pend.length;
+      return`<div class="kpi-cell ${cls}"><div class="kpi-val">${val}</div></div>`;
+    }).join('');
+  }
+  document.getElementById('kpi-g').innerHTML=kpiCells(sg,'g');
+  document.getElementById('kpi-y').innerHTML=kpiCells(sy,'y');
+
+  // Listas hoy
+  function renderHoy(list,el,badge,cls){
+    document.getElementById(badge).textContent=list.length;
+    const ct=document.getElementById(el);
+    if(!list.length){ct.innerHTML='<div class="empty"><span>🎈</span>Sin reservas hoy</div>';return;}
+    ct.innerHTML=list.map(r=>`<div class="hoy-ev">
+      <div class="hoy-ev-name">${r.cumple||'(sin nombre)'} <span class="badge" style="font-size:9px;background:#f0f0f0;color:#666">${r.plan||''}</span></div>
+      <div class="hoy-ev-meta">👤 ${r.apoderado||''} · 📞 ${r.fono||''}${r.inv?` · 🎨 ${r.inv}`:''}</div>
+      <div class="hoy-ev-pago">${pend(r)>0?`<span style="color:#E8593C;font-weight:700">⚠️ Saldo: ${fmtM(pend(r))}</span>`:'<span style="color:#3B8040;font-weight:700">✓ Pagado</span>'}</div>
+    </div>`).join('');
+  }
+  renderHoy(sg.hoy,'g-hoy-list','g-hoy-count','g');
+  renderHoy(sy.hoy,'y-hoy-list','y-hoy-count','y');
+
+  // Próximas
+  function renderProx(list,el){
+    const ct=document.getElementById(el);
+    if(!list.length){ct.innerHTML='<div class="empty"><span>🗓️</span>Sin próximas</div>';return;}
+    ct.innerHTML=`<table><tbody>${list.slice(0,5).map(r=>`<tr>
+      <td style="white-space:nowrap;font-size:11px">${fmtF(r.fecha)}</td>
+      <td><strong style="font-size:12px">${r.cumple||'–'}</strong></td>
+      <td style="font-size:11px;color:#6B7A92">${r.apoderado||'–'}</td>
+      <td>${pend(r)>0?`<span class="badge badge-coral">Pend.</span>`:'<span class="badge badge-grass">OK</span>'}</td>
+    </tr>`).join('')}</tbody></table>`;
+  }
+  renderProx(sg.prox,'g-prox-list');
+  renderProx(sy.prox,'y-prox-list');
+
+  // Planes comparativa
+  function topPlanes(rs,n=6){const m={};rs.forEach(r=>{if(r.plan)m[r.plan]=(m[r.plan]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n);}
+  const tG=topPlanes(G), tY=topPlanes(Y);
+  const allPlanes=[...new Set([...tG.map(x=>x[0]),...tY.map(x=>x[0])])];
+  const mapG=Object.fromEntries(tG), mapY=Object.fromEntries(tY);
+  const maxP=Math.max(...allPlanes.map(p=>(mapG[p]||0)+(mapY[p]||0)),1);
+  document.getElementById('planes-compare').innerHTML=allPlanes.map(p=>`
+    <div class="bar-row"><div class="bar-label">${p}</div>
+    <div class="bar-track" style="display:flex;gap:1px">
+      <div class="bar-fill-g" style="width:${Math.round((mapG[p]||0)/maxP*100)}%"></div>
+      <div class="bar-fill-y" style="width:${Math.round((mapY[p]||0)/maxP*100)}%"></div>
+    </div>
+    <div class="bar-val" style="width:60px;font-size:10px;color:#6B7A92">🌻${mapG[p]||0} ☀️${mapY[p]||0}</div>
+    </div>`).join('');
+
+  // Temáticas
+  function topTemas(rs,n=8){const m={};rs.forEach(r=>{if(r.inv&&r.inv.toLowerCase()!=='no quiso')m[r.inv]=(m[r.inv]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n);}
+  const temasG=topTemas(G), temasY=topTemas(Y);
+  const allTemas=[...new Set([...temasG.map(x=>x[0]),...temasY.map(x=>x[0])])].slice(0,10);
+  const mapTG=Object.fromEntries(temasG), mapTY=Object.fromEntries(temasY);
+  const maxT=Math.max(...allTemas.map(t=>(mapTG[t]||0)+(mapTY[t]||0)),1);
+  document.getElementById('temas-compare').innerHTML=allTemas.map(t=>`
+    <div class="bar-row"><div class="bar-label">${t}</div>
+    <div class="bar-track" style="display:flex;gap:1px">
+      <div class="bar-fill-g" style="width:${Math.round((mapTG[t]||0)/maxT*100)}%"></div>
+      <div class="bar-fill-y" style="width:${Math.round((mapTY[t]||0)/maxT*100)}%"></div>
+    </div>
+    <div class="bar-val" style="width:60px;font-size:10px">🌻${mapTG[t]||0} ☀️${mapTY[t]||0}</div>
+    </div>`).join('')||'<div class="empty"><span>🎨</span>Sin datos</div>';
+
+  // Pendientes
+  function renderPend(list,listEl,countEl){
+    document.getElementById(countEl).textContent=list.length;
+    const ct=document.getElementById(listEl);
+    if(!list.length){ct.innerHTML='<div class="empty"><span>✅</span>Sin pendientes</div>';return;}
+    ct.innerHTML=`<table><tbody>${list.slice(0,8).map(r=>`<tr>
+      <td style="white-space:nowrap;font-size:11px">${fmtF(r.fecha)}</td>
+      <td><strong style="font-size:12px">${r.cumple||r.apoderado||'–'}</strong></td>
+      <td style="color:#E8593C;font-weight:700;font-size:12px">${fmtM(pend(r))}</td>
+    </tr>`).join('')}</tbody></table>${list.length>8?`<div style="font-size:10px;color:#6B7A92;padding:8px 0">...y ${list.length-8} más</div>`:''}`;
+  }
+  renderPend(sg.pend,'g-pend-list','g-pend-count');
+  renderPend(sy.pend,'y-pend-list','y-pend-count');
+
+  // Tabla global
+  const allFiltered=[
+    ...G.map(r=>({...r,_local:'G'})),
+    ...Y.map(r=>({...r,_local:'Y'}))
+  ].sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  document.getElementById('global-count').textContent=allFiltered.length;
+  document.getElementById('global-tbody').innerHTML=allFiltered.slice(0,100).map(r=>`<tr>
+    <td><span class="badge badge-${r._local.toLowerCase()}">${r._local==='G'?'🌻 Gira.':'☀️ Yelou'}</span></td>
+    <td style="white-space:nowrap;font-size:11px">${fmtF(r.fecha)}</td>
+    <td><span class="badge badge-gray" style="font-size:9.5px">${r.plan||'–'}</span></td>
+    <td><strong>${r.cumple||'–'}</strong></td>
+    <td style="font-size:11px">${r.apoderado||'–'}</td>
+    <td>${fmtM(r.monto)}</td>
+    <td>${pend(r)>0?'<span class="badge badge-coral">Pendiente</span>':'<span class="badge badge-grass">Pagado</span>'}</td>
+  </tr>`).join('');
+  if(allFiltered.length>100)document.getElementById('global-tbody').innerHTML+=`<tr><td colspan="7" style="text-align:center;color:#6B7A92;padding:12px;font-size:11px">Mostrando 100 de ${allFiltered.length} — exporta CSV para ver todos</td></tr>`;
+};
+
+window.exportCSV=function(){
+  const anio=document.getElementById('ctrl-anio').value;
+  const mes=document.getElementById('ctrl-mes').value;
+  let rs=[...dataG.map(r=>({...r,local:'Girasoles Park'})),...dataY.map(r=>({...r,local:'Yelou'}))];
+  if(anio)rs=rs.filter(r=>new Date(r.fecha).getFullYear()==Number(anio));
+  if(mes!=='')rs=rs.filter(r=>new Date(r.fecha).getMonth()==Number(mes));
+  rs.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const cols=['Local','Fecha','Plan','Cumpleañer@','Apoderado','Teléfono','Monto','Pagado','Diferencia','Banco','Boleta','Invitación','Cobrador'];
+  const rows=rs.map(r=>[r.local,fmtF(r.fecha),r.plan||'',r.cumple||'',r.apoderado||'',r.fono||'',r.monto||0,r.pagado||0,pend(r),r.banco||'',r.boleta||'',r.inv||'',r.cobrador||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv=[cols.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`dashboard_${new Date().toISOString().split('T')[0]}.csv`;a.click();
+};
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centro de Eventos — Sistema de Reservas</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  background: #0f1923;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Fondo animado */
+.bg-circles {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.circle {
+  position: absolute; border-radius: 50%; opacity: 0.06;
+  animation: float linear infinite;
+}
+.circle:nth-child(1){width:300px;height:300px;background:#F5C842;top:-60px;left:-80px;animation-duration:22s;}
+.circle:nth-child(2){width:200px;height:200px;background:#3B8040;top:60%;left:5%;animation-duration:18s;animation-delay:-6s;}
+.circle:nth-child(3){width:150px;height:150px;background:#E8593C;top:20%;right:10%;animation-duration:25s;animation-delay:-12s;}
+.circle:nth-child(4){width:400px;height:400px;background:#2E78C7;bottom:-100px;right:-100px;animation-duration:30s;animation-delay:-8s;}
+.circle:nth-child(5){width:100px;height:100px;background:#F5C842;top:45%;right:25%;animation-duration:15s;animation-delay:-3s;}
+@keyframes float {
+  0%{transform:translate(0,0) rotate(0deg);}
+  33%{transform:translate(30px,-20px) rotate(120deg);}
+  66%{transform:translate(-20px,30px) rotate(240deg);}
+  100%{transform:translate(0,0) rotate(360deg);}
+}
+
+/* Contenido principal */
+.main {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0;
+  width: 100%; max-width: 900px;
+  padding: 0 24px;
+}
+
+.header {
+  text-align: center; margin-bottom: 48px;
+  animation: fadeDown 0.7s ease both;
+}
+.header h1 {
+  font-size: 13px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: rgba(255,255,255,0.4);
+  margin-bottom: 8px;
+}
+.header h2 {
+  font-size: 28px; font-weight: 800; color: #fff;
+  letter-spacing: -0.5px;
+}
+.header p { font-size: 14px; color: rgba(255,255,255,0.45); margin-top: 6px; }
+
+/* Tarjetas de local */
+.locals-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px; width: 100%;
+}
+
+.local-card {
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  padding: 40px 32px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  text-decoration: none;
+  position: relative; overflow: hidden;
+  animation: fadeUp 0.7s ease both;
+}
+.local-card:nth-child(1) { animation-delay: 0.1s; }
+.local-card:nth-child(2) { animation-delay: 0.2s; }
+
+.local-card::before {
+  content: ''; position: absolute; inset: 0;
+  opacity: 0; transition: opacity 0.25s;
+  border-radius: 22px;
+}
+.local-card.girasoles::before { background: radial-gradient(circle at 50% 0%, rgba(245,200,66,0.12), transparent 70%); }
+.local-card.yelou::before { background: radial-gradient(circle at 50% 0%, rgba(255,215,0,0.12), transparent 70%); }
+
+.local-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.07);
+}
+.local-card:hover::before { opacity: 1; }
+.local-card.girasoles:hover { border-color: rgba(245,200,66,0.4); box-shadow: 0 20px 60px rgba(245,200,66,0.12); }
+.local-card.yelou:hover { border-color: rgba(255,215,0,0.4); box-shadow: 0 20px 60px rgba(255,215,0,0.12); }
+
+.local-card:active { transform: translateY(-2px) scale(0.98); }
+
+/* Logo container */
+.logo-wrap {
+  width: 160px; height: 160px;
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: transform 0.25s;
+  position: relative; z-index: 1;
+}
+.local-card:hover .logo-wrap { transform: scale(1.05); }
+
+.logo-wrap.girasoles {
+  background: #fff;
+  padding: 12px;
+}
+.logo-wrap.yelou {
+  background: #FFD700;
+  padding: 12px;
+}
+
+.logo-wrap img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+
+/* Logo fallback SVG */
+.logo-fallback {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.card-info { text-align: center; position: relative; z-index: 1; }
+.card-name {
+  font-size: 18px; font-weight: 800; color: #fff;
+  letter-spacing: -0.3px; margin-bottom: 4px;
+}
+.local-card.girasoles .card-name { color: #F5C842; }
+.local-card.yelou .card-name { color: #FFD700; }
+
+.card-sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 16px; }
+
+.card-stats {
+  display: flex; gap: 20px; justify-content: center;
+}
+.stat { text-align: center; }
+.stat-n { font-size: 20px; font-weight: 800; color: #fff; line-height: 1; }
+.stat-l { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.enter-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 22px; border-radius: 100px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
+  transition: all 0.2s;
+  position: relative; z-index: 1;
+}
+.local-card:hover .enter-btn {
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+}
+.local-card.girasoles:hover .enter-btn { border-color: rgba(245,200,66,0.6); color: #F5C842; }
+.local-card.yelou:hover .enter-btn { border-color: rgba(255,215,0,0.6); color: #FFD700; }
+
+/* Dashboard link */
+.dashboard-link {
+  margin-top: 32px;
+  animation: fadeUp 0.7s ease 0.35s both;
+}
+.dashboard-link a {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; border-radius: 100px;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.6);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.dashboard-link a:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.25);
+  color: #fff;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.g { background: #F5C842; }
+.dot.y { background: #FFD700; }
+
+/* Footer */
+.footer {
+  position: fixed; bottom: 20px;
+  font-size: 11px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.5px;
+  animation: fadeUp 0.7s ease 0.5s both;
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 680px) {
+  .locals-grid { grid-template-columns: 1fr; }
+  .header h2 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="bg-circles">
+  <div class="circle"></div><div class="circle"></div><div class="circle"></div>
+  <div class="circle"></div><div class="circle"></div>
+</div>
+
+<div class="main">
+  <div class="header">
+    <h1>Centro de Eventos</h1>
+    <h2>Sistema de Reservas</h2>
+    <p>Selecciona el local para ingresar al sistema</p>
+  </div>
+
+  <div class="locals-grid">
+    <!-- GIRASOLES PARK -->
+    <a class="local-card girasoles" href="girasoles.html">
+      <div class="logo-wrap girasoles">
+        <!-- Logo Girasoles Park — círculos de colores estilo Play & Learn -->
+        <svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+          <!-- Círculos decorativos -->
+          <circle cx="55" cy="55" r="42" fill="#D4E827"/>
+          <circle cx="78" cy="38" r="22" fill="#F26522"/>
+          <circle cx="88" cy="62" r="14" fill="#7B2D8B"/>
+          <circle cx="30" cy="90" r="18" fill="#F26522"/>
+          <circle cx="50" cy="108" r="14" fill="#7B2D8B"/>
+          <circle cx="22" cy="108" r="10" fill="#F26522"/>
+          <circle cx="98" cy="28" r="7" fill="#2E78C7"/>
+          <!-- Texto -->
+          <text x="105" y="62" font-family="Arial Black, sans-serif" font-weight="900" font-size="20" fill="#3B8040">Girasoles</text>
+          <text x="105" y="84" font-family="Arial Black, sans-serif" font-weight="900" font-size="20" fill="#F5C842">Park</text>
+          <text x="105" y="104" font-family="Arial, sans-serif" font-weight="700" font-size="13" fill="#7B2D8B">Play </text>
+          <text x="143" y="104" font-family="Arial Black, sans-serif" font-weight="900" font-size="15" fill="#F26522">&amp;</text>
+          <text x="157" y="104" font-family="Arial, sans-serif" font-weight="700" font-size="13" fill="#2E78C7">Learn</text>
+        </svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">Girasoles Park</div>
+        <div class="card-sub">Play & Learn · Sistema de Reservas</div>
+        <div class="card-stats" id="g-stats">
+          <div class="stat"><div class="stat-n" id="g-mes">–</div><div class="stat-l">Este mes</div></div>
+          <div class="stat"><div class="stat-n" id="g-hoy">–</div><div class="stat-l">Hoy</div></div>
+          <div class="stat"><div class="stat-n" id="g-pend">–</div><div class="stat-l">Pendientes</div></div>
+        </div>
+      </div>
+      <div class="enter-btn">Ingresar →</div>
+    </a>
+
+    <!-- YELOU -->
+    <a class="local-card yelou" href="yelou.html">
+      <div class="logo-wrap yelou">
+        <!-- Logo Yelou Fun Factory -->
+        <svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+          <!-- Manchas de pintura estilo Yelou -->
+          <ellipse cx="30" cy="18" rx="28" ry="14" fill="#000" opacity="0.15" transform="rotate(-15 30 18)"/>
+          <ellipse cx="170" cy="145" rx="32" ry="12" fill="#000" opacity="0.15" transform="rotate(10 170 145)"/>
+          <ellipse cx="165" cy="25" rx="18" ry="8" fill="#000" opacity="0.12" transform="rotate(20 165 25)"/>
+          <!-- Texto YELOU grande y bold -->
+          <text x="100" y="92" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="58" fill="#1a1a1a" letter-spacing="-2">YELOU</text>
+          <!-- Subtítulo -->
+          <text x="100" y="115" text-anchor="middle" font-family="Arial, sans-serif" font-weight="400" font-size="14" fill="#333" letter-spacing="4">FUN FACTORY</text>
+        </svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">Yelou</div>
+        <div class="card-sub">Fun Factory · Sistema de Reservas</div>
+        <div class="card-stats">
+          <div class="stat"><div class="stat-n" id="y-mes">–</div><div class="stat-l">Este mes</div></div>
+          <div class="stat"><div class="stat-n" id="y-hoy">–</div><div class="stat-l">Hoy</div></div>
+          <div class="stat"><div class="stat-n" id="y-pend">–</div><div class="stat-l">Pendientes</div></div>
+        </div>
+      </div>
+      <div class="enter-btn">Ingresar →</div>
+    </a>
+  </div>
+
+  <div class="dashboard-link">
+    <a href="dashboard.html">
+      <span class="dot g"></span>
+      <span class="dot y"></span>
+      Ver dashboard comparativo — ambos locales
+    </a>
+  </div>
+</div>
+
+<div class="footer">Sistema de Reservas · Girasoles Park & Yelou</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "REEMPLAZA_AQUI",
+  authDomain: "REEMPLAZA_AQUI.firebaseapp.com",
+  projectId: "REEMPLAZA_AQUI",
+  storageBucket: "REEMPLAZA_AQUI.appspot.com",
+  messagingSenderId: "REEMPLAZA_AQUI",
+  appId: "REEMPLAZA_AQUI"
+};
+
+try {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const finMes = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0);
+
+  async function loadStats(colName, prefix) {
+    const snap = await getDocs(collection(db, colName));
+    const docs = snap.docs.map(d=>({...d.data(), fecha: d.data().fecha?.toDate ? d.data().fecha.toDate() : new Date(d.data().fecha)}));
+    const mes = docs.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f>=inicioMes&&f<=finMes;});
+    const h = docs.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f.getTime()===hoy.getTime();});
+    const pend = docs.filter(r=>(Number(r.monto)||0)-(Number(r.pagado)||0)>0);
+    document.getElementById(prefix+'-mes').textContent = mes.length;
+    document.getElementById(prefix+'-hoy').textContent = h.length;
+    document.getElementById(prefix+'-pend').textContent = pend.length;
+  }
+  loadStats('girasoles_reservas','g').catch(()=>{});
+  loadStats('yelou_reservas','y').catch(()=>{});
+} catch(e) {
+  // Demo
+  ['g','y'].forEach(p=>{
+    document.getElementById(p+'-mes').textContent = Math.floor(Math.random()*15+5);
+    document.getElementById(p+'-hoy').textContent = Math.floor(Math.random()*3);
+    document.getElementById(p+'-pend').textContent = Math.floor(Math.random()*4);
+  });
+}
+</script>
+</body>
+</html>
