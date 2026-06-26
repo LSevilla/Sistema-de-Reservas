@@ -250,6 +250,10 @@ textarea { resize: vertical; min-height: 60px; }
       <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Nueva Reserva
     </button>
+    <button class="nav-action secondary" onclick="openNuevoPago()" style="margin-top:3px">
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="8" y1="15" x2="13" y2="15"/><line x1="16" y1="15" x2="18" y2="15"/></svg>
+      Nuevo Pago
+    </button>
     <button class="nav-item" data-panel="seguimiento" onclick="showPanel('seguimiento', this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       Seguimiento
@@ -616,7 +620,7 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
       <div id="pago-diff-info" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:4px"></div>
       <div class="form-section" style="margin-top:12px">Observaciones</div>
-      <div class="form-grid cols1"><div class="field"><label>Observaciones</label><textarea id="p-obs" placeholder="Abono parcial, cambio de plan..."></textarea></div></div>
+      <div class="form-grid cols1"><div class="field"><textarea id="p-obs" placeholder="Abono parcial, cambio de plan..." style="min-height:70px"></textarea></div></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closePago()">Cancelar</button>
@@ -665,16 +669,24 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="field"><label>Temática / Invitación</label><input type="text" id="r-inv" placeholder="Ej: Paw Patrol, Frozen…"></div>
       </div>
       <div class="form-section">Pago</div>
-      <div class="form-grid cols3" style="margin-bottom:14px">
-        <div class="field"><label>Monto acordado (CLP)</label><input type="number" id="r-monto" placeholder="280000" step="1000"></div>
-        <div class="field"><label>Monto pagado (CLP)</label><input type="number" id="r-pagado" placeholder="280000" step="1000"></div>
-        <div class="field"><label>Banco / Medio</label><input type="text" id="r-banco" placeholder="Ej: Santander 15/6"></div>
-        <div class="field"><label>Boleta N°</label><input type="text" id="r-boleta"></div>
-        <div class="field"><label>Cobrado por</label><input type="text" id="r-cobrador" placeholder="Claudia / Leray…"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border-radius:8px;border:1.5px dashed var(--border);margin-bottom:14px">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px">💳 Registrar pago de esta reserva</div>
+          <div style="font-size:11px;color:var(--text-muted)">Guarda la reserva primero, luego usa el módulo de pagos para registrar el cobro.</div>
+        </div>
+        <button type="button" class="btn btn-grass btn-sm" onclick="irAPagoDesdeReserva()" style="flex-shrink:0;white-space:nowrap">
+          💳 Ir a Pagos →
+        </button>
       </div>
+      <!-- Mantener campos ocultos para compatibilidad con guardar() -->
+      <input type="hidden" id="r-monto" value="">
+      <input type="hidden" id="r-pagado" value="">
+      <input type="hidden" id="r-banco" value="">
+      <input type="hidden" id="r-boleta" value="">
+      <input type="hidden" id="r-cobrador" value="">
       <div class="form-section">Observaciones</div>
       <div class="form-grid cols1">
-        <div class="field"><label>Observaciones</label><textarea id="r-obs" placeholder="Extra hora, cambio de fecha, descuento…"></textarea></div>
+        <div class="field"><textarea id="r-obs" placeholder="Extra hora, cambio de fecha, descuento…" style="min-height:70px"></textarea></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1263,6 +1275,32 @@ async function guardarPago() {
 function closePago() {
   document.getElementById('modal-pago').classList.add('hidden');
   pagoReservaId = null;
+}
+
+
+function irAPagoDesdeReserva() {
+  // Si hay apoderado, guardamos primero y luego vamos a pago
+  const apoderado = document.getElementById('r-apoderado').value.trim();
+  if (!apoderado) {
+    alert('Completa al menos el nombre del Apoderado antes de ir a Pagos.');
+    return;
+  }
+  // Guardar la reserva silenciosamente y luego abrir pago
+  guardar().then(function() {
+    closeModal();
+    // Breve delay para que la reserva quede en S.reservas
+    setTimeout(function() {
+      // Buscar la reserva recién creada (la primera, que es la más reciente)
+      if (S.reservas.length > 0) {
+        openNuevoPago(S.reservas[0].id);
+      } else {
+        openNuevoPago();
+      }
+    }, 300);
+  }).catch(function() {
+    closeModal();
+    openNuevoPago();
+  });
 }
 
 initFirebase();
