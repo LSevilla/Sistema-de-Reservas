@@ -215,6 +215,35 @@ body {
   .locals-grid { grid-template-columns: 1fr; }
   .header h2 { font-size: 22px; }
 }
+
+.changelog-panel {
+  position: fixed; bottom: 36px; right: 24px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 12px 16px; max-width: 340px;
+  backdrop-filter: blur(8px); z-index: 1;
+  animation: fadeUp 0.7s ease 0.5s both;
+}
+.changelog-title {
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+}
+.changelog-item {
+  display: flex; gap: 8px; align-items: baseline;
+  padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 11px;
+}
+.changelog-item:last-child { border-bottom: none; }
+.changelog-ver {
+  font-weight: 700; color: rgba(255,255,255,0.35); flex-shrink: 0; font-size: 10px;
+}
+.changelog-desc { color: rgba(255,255,255,0.3); line-height: 1.4; }
+.changelog-item--current .changelog-ver { color: #F5C842; }
+.changelog-item--current .changelog-desc { color: rgba(255,255,255,0.55); }
+.current-badge {
+  display: inline-block; background: #F5C842; color: #1A2B4A;
+  font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 10px;
+  margin-right: 3px; vertical-align: middle; letter-spacing: 0.3px;
+}
 </style>
 </head>
 <body>
@@ -254,7 +283,7 @@ body {
       </div>
       <div class="card-info">
         <div class="card-name">Girasoles Park</div>
-        <div class="card-sub">Play & Learn · Sistema de Reservas</div>
+        <div class="card-sub">Play & Learn · v2.2</div>
         <div class="card-stats" id="g-stats">
           <div class="stat"><div class="stat-n" id="g-mes">–</div><div class="stat-l">Este mes</div></div>
           <div class="stat"><div class="stat-n" id="g-hoy">–</div><div class="stat-l">Hoy</div></div>
@@ -281,7 +310,7 @@ body {
       </div>
       <div class="card-info">
         <div class="card-name">Yelou</div>
-        <div class="card-sub">Fun Factory · Sistema de Reservas</div>
+        <div class="card-sub">Fun Factory · v2.2</div>
         <div class="card-stats">
           <div class="stat"><div class="stat-n" id="y-mes">–</div><div class="stat-l">Este mes</div></div>
           <div class="stat"><div class="stat-n" id="y-hoy">–</div><div class="stat-l">Hoy</div></div>
@@ -301,7 +330,8 @@ body {
   </div>
 </div>
 
-<div class="footer">Sistema de Reservas · Girasoles Park & Yelou</div>
+<div class="changelog-panel"><div class="changelog-title">📋 Versiones</div><div class="changelog-item"><span class="changelog-ver">v2.2</span><span class="changelog-desc">Observaciones sin duplicado, Nuevo Pago en menú, pago separado de reserva</span></div><div class="changelog-item"><span class="changelog-ver">v2.1</span><span class="changelog-desc">Calendario con colores AM/PM/A/B/Paseo, tabla de columnas en Importar</span></div><div class="changelog-item"><span class="changelog-ver">v2.0</span><span class="changelog-desc">Módulos separados por local, importador Excel, dashboard comparativo</span></div><div class="changelog-item"><span class="changelog-ver">v1.0</span><span class="changelog-desc">Sistema inicial de reservas y seguimiento</span></div></div>
+<div class="footer">Sistema de Reservas v2.2 · Girasoles Park & Yelou</div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
