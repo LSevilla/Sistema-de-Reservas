@@ -317,7 +317,7 @@ textarea { resize: vertical; min-height: 60px; }
     <div class="card">
       <div class="card-header">
         <div class="card-title">📋 Seguimiento <span id="seg-count" class="badge badge-gray" style="margin-left:6px">0</span></div>
-        <span id="seg-total-monto" style="font-size:12px;color:var(--text-muted)"></span>
+        <span id="seg-monto-total" style="font-size:12px;color:var(--text-muted)"></span>
       </div>
       <div class="table-wrap">
         <table>
@@ -343,7 +343,7 @@ textarea { resize: vertical; min-height: 60px; }
         <option value="paseo">Paseo de curso</option>
       </select>
     </div>
-    <div class="stats-grid" id="pagos-resumen-stats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div class="stats-grid" id="pagos-stats" style="grid-template-columns:repeat(4,1fr)"></div>
     <div class="card">
       <div class="card-header"><div class="card-title">💳 Registro de pagos</div></div>
       <div class="table-wrap">
@@ -389,7 +389,7 @@ textarea { resize: vertical; min-height: 60px; }
             <div style="font-size:12px;font-weight:700">Vista previa — <span id="preview-count">0</span> registros detectados</div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-outline btn-sm" onclick="clearImport()">✕ Limpiar</button>
-              <button class="btn btn-primary" id="btn-confirmar-import" onclick="confirmarImport()">✅ Importar todos los registros</button>
+              <button class="btn btn-primary" id="btn-import" onclick="confirmarImport()">✅ Importar todos los registros</button>
             </div>
           </div>
           <div class="import-table-wrap">
@@ -706,7 +706,7 @@ function handleFile(file){
   reader.onload=function(e){
     try{
       const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});window._wb=wb;
-      const matching=wb.SheetNames.filter(n=>n.trim().toUpperCase().startsWith(LOCAL_PREFIX));
+      const matching=wb.SheetNames.filter(n=>n.trim().toUpperCase().startsWith(LOCAL_PREFIX)||n.trim().toUpperCase().replace(/\s+/g,'').startsWith(LOCAL_PREFIX));
       document.getElementById('sheet-tab-list').innerHTML=wb.SheetNames.map(s=>'<span class="sheet-tab'+(matching.includes(s)?' active':'')+'" onclick="toggleSheet(this)" data-sheet="'+s+'">'+s+'</span>').join('');
       document.getElementById('sheet-tabs').style.display='';
       const info=document.getElementById('import-match-info');info.style.display='';
@@ -724,30 +724,83 @@ function toggleSheet(el){
 }
 
 function parseSheet(ws,sheetName){
-  const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});if(!json.length)return[];
-  let hi=0;for(let i=0;i<Math.min(5,json.length);i++){const r=json[i].map(c=>String(c).toUpperCase().trim());if(r.some(c=>c.includes('FECHA')||c.includes('HORARIO')||c.includes('MONTO')||c.includes('PAGO'))){hi=i;break;}}
-  const h=json[hi].map(c=>String(c).toUpperCase().trim());
-  function col(){const ns=[...arguments];for(const n of ns){const i=h.findIndex(x=>x.includes(n));if(i>=0)return i;}return -1;}
-  const cF=col('FECHA'),cT=col('TIPO Y HORARIO','HORARIO/TIPO','HORARIO','TIPO'),cC=col('CUMPLEAÑER','CUMPLEANER','CUMPLE');
-  const cA=col('MAMA','APODERADO'),cFo=col('TELEFONO','FONO'),cM=col('PAGO','MONTO','TOTAL');
-  const cB=col('BANCO','DETALLE'),cBo=col('BOLETA'),cI=col('INVITACION','INV'),cD=col('DIA');
+  const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+  if(!json.length)return[];
+  let hi=-1;
+  const KEYS=['FECHA','HORARIO','MONTO','PAGO','APODERADO','MAMA','CUMPLE'];
+  for(let i=0;i<Math.min(6,json.length);i++){
+    const r=json[i].map(c=>String(c||'').toUpperCase().trim());
+    if(r.filter(c=>KEYS.some(k=>c.includes(k))).length>=2){hi=i;break;}
+  }
+  if(hi<0){
+    const sample=json.slice(0,5).map(r=>r[1]).filter(Boolean);
+    const hasDates=sample.some(v=>String(v).match(/\d{4}-\d{2}-\d{2}/)||typeof v==='number'&&v>40000);
+    if(hasDates)return parseByPosition(json,sheetName,1,2,3,4,5,6,7,8,9,-1,-1);
+    return[];
+  }
+  const h=json[hi].map(c=>String(c||'').toUpperCase().trim());
+  function col(...names){for(const n of names){const i=h.findIndex(x=>x&&x.includes(n));if(i>=0)return i;}return-1;}
+  const cF=col('FECHA'),cT=col('HORARIO/TIPO','TIPO Y HORARIO','HORARIO','TIPO');
+  const cC=col('CUMPLEAÑER','CUMPLEANER','CUMPLE'),cA=col('MAMA','APODERADO'),cFo=col('TELEFONO','FONO');
+  const cM=col('MONTO','PAGO','TOTAL'),cB=col('BANCO','DETALLE'),cBo=col('BOLETA');
+  const cI=col('INVITACION','INV'),cD=col('DIA'),cCo=col('A:','COBRADOR','QUIEN');
+  const cObs=col('OBSERVACIONES','OBSERV');
+  if(cF<0)return[];
   const rows=[];
   for(let i=hi+1;i<json.length;i++){
-    const row=json[i];if(!row||row.every(c=>c===''||c===null||c===undefined))continue;
-    let rawF=cF>=0?row[cF]:'';if(rawF===''||rawF===null||rawF===undefined)continue;
-    let fecha;if(typeof rawF==='number'){const d=new Date(Math.round((rawF-25569)*86400*1000));fecha=new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());}
-    else if(rawF instanceof Date){fecha=rawF;}else{fecha=new Date(rawF);}
-    if(isNaN(fecha)||fecha.getFullYear()<2000||fecha.getFullYear()>2030)continue;
-    const plan=String(cT>=0?row[cT]||'':'').trim();const monto=Number(String(cM>=0?row[cM]||0:0).replace(/[^0-9.-]/g,''))||0;
+    const row=json[i];
+    if(!row||row.every(c=>c===''||c===null||c===undefined))continue;
+    let rawF=row[cF];if(rawF===''||rawF===null||rawF===undefined)continue;
+    const fecha=parseExcelDate(rawF);if(!fecha)continue;
+    const plan=String(cT>=0?row[cT]||'':'').trim();
+    const monto=parseMonto(cM>=0?row[cM]:0);
     const banco=String(cB>=0?row[cB]||'':'').trim();
-    rows.push({fecha,dia:cD>=0?String(row[cD]||'').trim():DIAS_FULL[fecha.getDay()],plan:plan||'',tipo:plan.toLowerCase().includes('paseo')?'paseo':'cumple',
+    rows.push({fecha,dia:cD>=0?String(row[cD]||'').trim():DIAS_FULL[fecha.getDay()],
+      plan,tipo:plan.toLowerCase().includes('paseo')?'paseo':'cumple',
       cumple:String(cC>=0?row[cC]||'':'').trim(),apoderado:String(cA>=0?row[cA]||'':'').trim(),
-      fono:String(cFo>=0?row[cFo]||'':'').trim(),monto,pagado:banco&&banco!=='–'?monto:0,banco,
-      boleta:String(cBo>=0?row[cBo]||'':'').trim(),inv:String(cI>=0?row[cI]||'':'').trim(),cobrador:'',obs:'',_sheet:sheetName});
+      fono:String(cFo>=0?row[cFo]||'':'').trim(),monto,
+      pagado:banco&&banco!==''?monto:0,banco,
+      boleta:String(cBo>=0?row[cBo]||'':'').trim(),
+      inv:String(cI>=0?row[cI]||'':'').trim(),
+      cobrador:String(cCo>=0?row[cCo]||'':'').trim(),
+      obs:String(cObs>=0?row[cObs]||'':'').trim(),_sheet:sheetName});
   }
   return rows;
 }
-
+function parseByPosition(json,sheetName,cF,cT,cC,cA,cFo,cM,cB,cBo,cI,cCo,cObs){
+  const rows=[];
+  for(let i=0;i<json.length;i++){
+    const row=json[i];if(!row||row.every(c=>c===''||c===null||c===undefined))continue;
+    let rawF=row[cF];if(rawF===''||rawF===null||rawF===undefined)continue;
+    const fecha=parseExcelDate(rawF);if(!fecha)continue;
+    const plan=String(cT>=0?row[cT]||'':'').trim();
+    const monto=parseMonto(cM>=0?row[cM]:0);
+    const banco=String(cB>=0?row[cB]||'':'').trim();
+    rows.push({fecha,dia:DIAS_FULL[fecha.getDay()],plan,tipo:plan.toLowerCase().includes('paseo')?'paseo':'cumple',
+      cumple:String(cC>=0?row[cC]||'':'').trim(),apoderado:String(cA>=0?row[cA]||'':'').trim(),
+      fono:String(cFo>=0?row[cFo]||'':'').trim(),monto,pagado:banco&&banco!==''?monto:0,banco,
+      boleta:String(cBo>=0?row[cBo]||'':'').trim(),inv:String(cI>=0?row[cI]||'':'').trim(),
+      cobrador:'',obs:'',_sheet:sheetName});
+  }
+  return rows;
+}
+function parseExcelDate(rawF){
+  if(rawF instanceof Date)return new Date(rawF.getFullYear(),rawF.getMonth(),rawF.getDate());
+  if(typeof rawF==='number'&&rawF>40000){
+    const d=new Date(Math.round((rawF-25569)*86400*1000));
+    return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
+  }
+  const s=String(rawF).trim();if(!s||s==='None'||s==='null')return null;
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));return isNaN(d)?null:d;}
+  const d=new Date(s);
+  if(isNaN(d)||d.getFullYear()<2000||d.getFullYear()>2030)return null;
+  return d;
+}
+function parseMonto(v){
+  if(!v&&v!==0)return 0;if(typeof v==='number')return Math.round(v);
+  return Number(String(v).replace(/[^0-9.-]/g,''))||0;
+}
 function renderPreview(){
   const rs=S.importRows;if(!rs.length){document.getElementById('import-preview').style.display='none';return;}
   document.getElementById('import-preview').style.display='';document.getElementById('preview-count').textContent=rs.length;document.getElementById('btn-import').textContent='✅ Importar '+rs.length+' registros';
