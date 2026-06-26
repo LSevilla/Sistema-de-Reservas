@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yelou — Sistema de Reservas</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   --primary: #D4A800;
@@ -94,6 +93,7 @@ table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 thead th { background: var(--bg); color: var(--text-muted); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); }
 tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
 tbody tr:hover { background: #fafafa; }
+tbody tr[ondblclick]:hover { background: var(--primary-light); }
 tbody td { padding: 8px 10px; vertical-align: middle; }
 tbody tr:last-child { border-bottom: none; }
 
@@ -190,6 +190,9 @@ textarea { resize: vertical; min-height: 60px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -210,29 +213,29 @@ textarea { resize: vertical; min-height: 60px; }
   </div>
   <nav>
     <div class="nav-section">Principal</div>
-    <button class="nav-item active" onclick="showPanel(\'dashboard\')">
+    <button class="nav-item active" data-panel="dashboard" onclick="showPanel('dashboard', this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Dashboard
     </button>
-    <button class="nav-item" onclick="showPanel(\'calendario\')">
+    <button class="nav-item" data-panel="calendario" onclick="showPanel('calendario', this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Calendario
     </button>
     <div class="nav-section">Datos</div>
-    <button class="nav-item" onclick="showPanel(\'seguimiento\')">
+    <button class="nav-item" data-panel="seguimiento" onclick="showPanel('seguimiento', this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       Seguimiento
     </button>
-    <button class="nav-item" onclick="showPanel(\'pagos\')">
+    <button class="nav-item" data-panel="pagos" onclick="showPanel('pagos', this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
       Pagos
     </button>
-    <button class="nav-item" onclick="showPanel(\'importar\')">
+    <button class="nav-item" data-panel="importar" onclick="showPanel('importar', this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Importar Excel
     </button>
     <div class="nav-section">Análisis</div>
-    <button class="nav-item" onclick="showPanel(\'resumen\')">
+    <button class="nav-item" data-panel="resumen" onclick="showPanel('resumen', this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Resumen
     </button>
@@ -363,7 +366,7 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="alert alert-warn">⚠️ El importador lee el formato histórico de tus planillas (G 2021, G 2022, Y 2023…). Antes de importar, revisa la vista previa. Los registros duplicados (misma fecha + apoderado) se omiten automáticamente.</div>
         
         <!-- Zona de arrastre -->
-        <div class="import-zone" id="import-zone" onclick="document.getElementById(\'file-input\').click()">
+        <div class="import-zone" id="import-zone" onclick="document.getElementById('file-input').click()">
           <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
           <span class="icon">📊</span>
           <h3>Arrastra tu Excel aquí o haz clic para seleccionar</h3>
@@ -519,659 +522,338 @@ textarea { resize: vertical; min-height: 60px; }
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+
+<script>
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDb_BLFkqagKfzAm31aZZ4IzvdQRdKjSI0",
-  authDomain: "park-sistema.firebaseapp.com",
-  projectId: "park-sistema",
-  storageBucket: "park-sistema.firebasestorage.app",
-  messagingSenderId: "75939250853",
-  appId: "1:75939250853:web:733ed19e5bfde0aea0434c",
-  measurementId: "G-C80PKNVNLJ"
+  apiKey: "REEMPLAZA_AQUI",
+  authDomain: "REEMPLAZA_AQUI.firebaseapp.com",
+  projectId: "REEMPLAZA_AQUI",
+  storageBucket: "REEMPLAZA_AQUI.appspot.com",
+  messagingSenderId: "REEMPLAZA_AQUI",
+  appId: "REEMPLAZA_AQUI"
 };
-const COLLECTION = 'yelou_reservas';
-
-let db, useFirebase = false;
-try {
-  const app = initializeApp(FIREBASE_CONFIG);
-  db = getFirestore(app);
-  useFirebase = true;
-} catch(e) {}
+const COLLECTION = "yelou_reservas";
+const LOCAL_PREFIX = "Y";
+const LOCAL_NAME = "Yelou";
+</script>
+<script>
+// ── INIT FIREBASE ────────────────────────────────────────
+function initFirebase() {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    S.db = firebase.firestore();
+    S.useFirebase = true;
+    console.log('Firebase OK:', COLLECTION);
+  } catch(e) { console.warn('Demo mode:', e.message); }
+}
 
 const DIAS_FULL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const S = { reservas:[], calY:new Date().getFullYear(), calM:new Date().getMonth(), editId:null, anioFiltro:'', importRows:[], importLogs:[], db:null, useFirebase:false };
 
-const S = {
-  reservas: [], calY: new Date().getFullYear(), calM: new Date().getMonth(),
-  editId: null, verId: null, anioFiltro: '',
-  importRows: [], importLogs: [],
-};
+function fmtF(d){ if(!d)return'–'; const dt=d instanceof Date?d:new Date(d); return isNaN(dt)?String(d):dt.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function fmtM(n){ return n!=null&&n!==''?'$'+Number(n).toLocaleString('es-CL'):'–'; }
+function isoDate(d){ if(!d)return''; const dt=d instanceof Date?d:new Date(d); return isNaN(dt)?'':dt.toISOString().split('T')[0]; }
+function pend(r){ return (Number(r.monto)||0)-(Number(r.pagado)||0); }
+function getTipo(r){ return r.tipo||((r.plan||'').toLowerCase().includes('paseo')?'paseo':'cumple'); }
 
-// ── UTILS ──
-function fmtF(d) {
-  if (!d) return '–';
-  const dt = d instanceof Date ? d : new Date(d);
-  if (isNaN(dt)) return String(d);
-  return dt.toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric'});
-}
-function fmtM(n) { return n!=null&&n!==''?'$'+Number(n).toLocaleString('es-CL'):'–'; }
-function isoDate(d) {
-  if (!d) return '';
-  const dt = d instanceof Date ? d : new Date(d);
-  if (isNaN(dt)) return '';
-  return dt.toISOString().split('T')[0];
-}
-function pendiente(r) { return (Number(r.monto)||0)-(Number(r.pagado)||0); }
-function getTipo(r) { return r.tipo || ((r.plan||'').toLowerCase().includes('paseo')?'paseo':'cumple'); }
-
-// ── LOAD ──
-async function load() {
-  if (useFirebase) {
-    try {
-      const snap = await getDocs(query(collection(db, COLLECTION), orderBy('fecha','desc')));
-      S.reservas = snap.docs.map(d => {
-        const data = d.data();
-        return { id: d.id, ...data, fecha: data.fecha?.toDate ? data.fecha.toDate() : new Date(data.fecha) };
-      });
-    } catch(e) { S.reservas = getDemoData(); }
-  } else { S.reservas = getDemoData(); }
-  populateAnios(); renderAll(); loadImportLog();
+async function load(){
+  if(S.useFirebase){
+    try{
+      const snap=await S.db.collection(COLLECTION).orderBy('fecha','desc').get();
+      S.reservas=snap.docs.map(d=>{const dt=d.data();let f=dt.fecha;if(f&&f.toDate)f=f.toDate();else if(f)f=new Date(f);return{id:d.id,...dt,fecha:f};});
+    }catch(e){console.warn(e);S.reservas=getDemoData();}
+  }else{S.reservas=getDemoData();}
+  populateAnios();renderAll();loadImportLog();
 }
 
-function getDemoData() {
-  const hoy = new Date(); const data = [];
-  const planes=['PM A','PM B','AM A','AM B','PM C','PASEO PM'];
-  const temas=['Paw Patrol','Frozen','Sonic','Minecraft','Bluey','Spider-Man','Princesas'];
-  const aps=['Carolina','Pamela','Valentina','Daniela','Marcela','Bárbara'];
-  const ns=['Luciana','Martín','Sofía','Benjamín','Valentina','Mateo'];
-  const bancos=['Santander 15/6','BCI 10/6','Chile 22/5','Transbank','Scotiabank'];
-  for (let y=2022;y<=2026;y++) {
-    const n = y===2026?8:Math.floor(Math.random()*20+10);
-    for (let i=0;i<n;i++) {
-      const d=new Date(y,Math.floor(Math.random()*12),Math.floor(Math.random()*28)+1);
+function getDemoData(){
+  const data=[];const planes=['PM A','PM B','AM A','AM B','PM C','PASEO PM'];
+  const temas=['Paw Patrol','Frozen','Sonic','Minecraft','Bluey','Princesas'];
+  const aps=['Carolina','Pamela','Valentina','Daniela','Marcela'];const ns=['Luciana','Martín','Sofía','Benjamín','Mateo'];
+  const bancos=['Santander','BCI','Chile','Transbank'];
+  for(let y=2022;y<=2026;y++){const n=y===2026?6:Math.floor(Math.random()*15+8);
+    for(let i=0;i<n;i++){const d=new Date(y,Math.floor(Math.random()*12),Math.floor(Math.random()*28)+1);
       const monto=[260000,280000,300000,490000][Math.floor(Math.random()*4)];
       const pagado=Math.random()>0.25?monto:(Math.random()>0.5?0:monto/2);
-      data.push({
-        id:'demo_'+y+'_'+i, fecha:d, dia:DIAS_FULL[d.getDay()],
-        tipo:Math.random()>0.15?'cumple':'paseo',
-        plan:planes[Math.floor(Math.random()*planes.length)],
-        cumple:ns[Math.floor(Math.random()*ns.length)],
-        apoderado:aps[Math.floor(Math.random()*aps.length)],
-        fono:'9'+Math.floor(Math.random()*90000000+10000000),
-        monto, pagado, banco:pagado>0?bancos[Math.floor(Math.random()*bancos.length)]:'',
+      data.push({id:'demo_'+y+'_'+i,fecha:d,dia:DIAS_FULL[d.getDay()],tipo:Math.random()>0.15?'cumple':'paseo',
+        plan:planes[Math.floor(Math.random()*planes.length)],cumple:ns[Math.floor(Math.random()*ns.length)],
+        apoderado:aps[Math.floor(Math.random()*aps.length)],fono:'9'+Math.floor(Math.random()*90000000+10000000),
+        monto,pagado,banco:pagado>0?bancos[Math.floor(Math.random()*bancos.length)]:'',
         boleta:pagado>0?String(Math.floor(Math.random()*50)+1):'',
-        inv:temas[Math.floor(Math.random()*temas.length)],
-        cobrador:['Claudia','Leray','Rayen'][Math.floor(Math.random()*3)], obs:''
-      });
+        inv:temas[Math.floor(Math.random()*temas.length)],cobrador:'Claudia',obs:''});
     }
   }
-  data.push({id:'hoy1',fecha:new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()),dia:'Hoy',tipo:'cumple',plan:'PM A',cumple:'Sofía',apoderado:'Carolina G.',fono:'987654321',monto:280000,pagado:280000,banco:'Santander 14/6',boleta:'42',inv:'Frozen',cobrador:'Claudia',obs:''});
+  const hoy=new Date();
+  data.push({id:'hoy1',fecha:new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()),dia:'Hoy',tipo:'cumple',plan:'PM A',cumple:'Sofía',apoderado:'Carolina G.',fono:'987654321',monto:280000,pagado:280000,banco:'Santander',boleta:'42',inv:'Frozen',cobrador:'Claudia',obs:''});
+  data.push({id:'hoy2',fecha:new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()),dia:'Hoy',tipo:'cumple',plan:'AM B',cumple:'Martín',apoderado:'Rodrigo P.',fono:'912345678',monto:300000,pagado:150000,banco:'BCI',boleta:'',inv:'Minecraft',cobrador:'Leray',obs:'Falta saldo'});
   return data;
 }
 
-function populateAnios() {
+function populateAnios(){
   const anios=[...new Set(S.reservas.map(r=>new Date(r.fecha).getFullYear()))].filter(Boolean).sort((a,b)=>b-a);
   ['f-anio','fp-anio','topbar-anio'].forEach(id=>{
-    const sel=document.getElementById(id); if(!sel)return;
-    const cur=sel.value;
-    sel.innerHTML='<option value="">Todos los años</option>'+anios.map(a=>`<option value="${a}">${a}</option>`).join('');
+    const sel=document.getElementById(id);if(!sel)return;const cur=sel.value;
+    sel.innerHTML='<option value="">Todos los años</option>'+anios.map(a=>'<option value="'+a+'">'+a+'</option>').join('');
     if(cur)sel.value=cur;
   });
 }
 
-function renderAll() { renderDashboard(); renderCalendario(); renderSeg(); renderPagos(); renderResumen(); }
+function renderAll(){renderDashboard();renderCalendario();renderSeg();renderPagos();renderResumen();}
 
-// ── DASHBOARD ──
-function renderDashboard() {
-  const hoy=new Date(); hoy.setHours(0,0,0,0);
-  const inicioMes=new Date(hoy.getFullYear(),hoy.getMonth(),1);
-  const finMes=new Date(hoy.getFullYear(),hoy.getMonth()+1,0);
-  const all = S.anioFiltro ? S.reservas.filter(r=>new Date(r.fecha).getFullYear()==S.anioFiltro) : S.reservas;
+function renderDashboard(){
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const iMes=new Date(hoy.getFullYear(),hoy.getMonth(),1);const fMes=new Date(hoy.getFullYear(),hoy.getMonth()+1,0);
+  const all=S.anioFiltro?S.reservas.filter(r=>new Date(r.fecha).getFullYear()==S.anioFiltro):S.reservas;
   const deHoy=all.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f.getTime()===hoy.getTime();});
-  const delMes=all.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f>=inicioMes&&f<=finMes;});
-  const conPend=all.filter(r=>pendiente(r)>0);
+  const delMes=all.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f>=iMes&&f<=fMes;});
+  const conPend=all.filter(r=>pend(r)>0);
   document.getElementById('s-mes').textContent=delMes.length;
   document.getElementById('s-monto').textContent='$'+(delMes.reduce((s,r)=>s+(Number(r.pagado)||0),0)/1000).toFixed(0)+'K';
   document.getElementById('s-hoy').textContent=deHoy.length;
   document.getElementById('s-pend').textContent=conPend.length;
   document.getElementById('dash-fecha-lbl').textContent=hoy.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('dash-total-hoy').textContent=deHoy.length+' reservas';
-  const totPend=conPend.reduce((s,r)=>s+pendiente(r),0);
-  document.getElementById('dash-pendbar').innerHTML=totPend>0?`<div class="pendbar">⚠️ <strong>${conPend.length} con saldo pendiente</strong> — Total: ${totPend.toLocaleString('es-CL')}</div>`:'';
-  
-  const dashHoy=document.getElementById('dash-hoy');
-  if(!deHoy.length) { dashHoy.innerHTML='<div class="empty"><span class="icon">🎈</span>Sin reservas para hoy</div>'; }
-  else dashHoy.innerHTML=deHoy.map(r=>`<div class="hoy-ev" onclick="verReserva('${r.id}')" >
-    <div class="hoy-ev-name">${r.cumple||'(sin nombre)'} <span class="badge badge-gray" style="font-size:9px">${r.plan||''}</span></div>
-    <div class="hoy-ev-meta"><span>👤 ${r.apoderado||''}</span><span>📞 ${r.fono||''}</span>${r.inv?`<span class="inv-tag">${r.inv}</span>`:''}</div>
-    <div class="hoy-ev-pago">${pendiente(r)>0?`<span class="pago-pend">⚠️ Saldo: ${fmtM(pendiente(r))}</span>`:'<span class="pago-ok">✓ Pagado</span>'}</div>
-  </div>`).join('');
-  
-  const fin7=new Date(hoy); fin7.setDate(fin7.getDate()+7);
+  const totPend=conPend.reduce((s,r)=>s+pend(r),0);
+  document.getElementById('dash-pendbar').innerHTML=totPend>0?'<div class="pendbar">⚠️ <strong>'+conPend.length+' con saldo pendiente</strong> — Total: '+fmtM(totPend)+'</div>':'';
+  const el=document.getElementById('dash-hoy');
+  if(!deHoy.length){el.innerHTML='<div class="empty"><span class="icon">🎈</span>Sin reservas para hoy</div>';}
+  else el.innerHTML=deHoy.map(r=>'<div class="hoy-ev" onclick="verReserva(\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'" title="Doble clic para editar"><div class="hoy-ev-name">'+(r.cumple||'(sin nombre)')+' <span class="badge badge-gray" style="font-size:9px">'+(r.plan||'')+'</span></div><div class="hoy-ev-meta"><span>👤 '+(r.apoderado||'')+'</span><span>📞 '+(r.fono||'')+'</span>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'')+'</div><div class="hoy-ev-pago">'+(pend(r)>0?'<span class="pago-pend">⚠️ Saldo: '+fmtM(pend(r))+'</span>':'<span class="pago-ok">✓ Pagado</span>')+'</div></div>').join('');
+  const fin7=new Date(hoy);fin7.setDate(fin7.getDate()+7);
   const prox=all.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f>hoy&&f<=fin7;}).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
-  const dp=document.getElementById('dash-proximas');
-  if(!prox.length) dp.innerHTML='<div class="empty"><span class="icon">🗓️</span>Sin reservas próximas</div>';
-  else dp.innerHTML=`<table><thead><tr><th>Fecha</th><th>Plan</th><th>Cumpleañer@</th><th>Apoderado</th><th>Monto</th><th>Estado pago</th></tr></thead><tbody>${
-    prox.map(r=>`<tr onclick="verReserva('${r.id}')" style="cursor:pointer">
-      <td>${fmtF(r.fecha)}</td><td><span class="badge badge-gray">${r.plan||'–'}</span></td>
-      <td><strong>${r.cumple||'–'}</strong></td><td>${r.apoderado||'–'}</td><td>${fmtM(r.monto)}</td>
-      <td>${pendiente(r)>0?`<span class="badge badge-coral">Pendiente ${fmtM(pendiente(r))}</span>`:'<span class="badge badge-grass">✓ Pagado</span>'}</td>
-    </tr>`).join('')
-  }</tbody></table>`;
+  const elP=document.getElementById('dash-proximas');
+  if(!prox.length){elP.innerHTML='<div class="empty"><span class="icon">🗓️</span>Sin reservas próximas</div>';}
+  else elP.innerHTML='<table><thead><tr><th>Fecha</th><th>Plan</th><th>Cumpleañer@</th><th>Apoderado</th><th>Monto</th><th>Estado</th></tr></thead><tbody>'+prox.map(r=>'<tr style="cursor:pointer" onclick="verReserva(\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'" title="Doble clic para editar"><td>'+fmtF(r.fecha)+'</td><td><span class="badge badge-gray">'+(r.plan||'–')+'</span></td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td>'+fmtM(r.monto)+'</td><td>'+(pend(r)>0?'<span class="badge badge-coral">Pend.'+fmtM(pend(r))+'</span>':'<span class="badge badge-grass">✓ Pagado</span>')+'</td></tr>').join('')+'</tbody></table>';
 }
 
-// ── CALENDARIO ──
-window.calNav=function(d){S.calM+=d;if(S.calM>11){S.calM=0;S.calY++;}if(S.calM<0){S.calM=11;S.calY--;}renderCalendario();};
-function renderCalendario() {
-  const {calY:y,calM:m}=S;
-  document.getElementById('cal-label').textContent=`${MESES[m]} ${y}`;
+function calNav(d){S.calM+=d;if(S.calM>11){S.calM=0;S.calY++;}if(S.calM<0){S.calM=11;S.calY--;}renderCalendario();}
+function renderCalendario(){
+  const y=S.calY,m=S.calM;document.getElementById('cal-label').textContent=MESES[m]+' '+y;
   const all=S.anioFiltro?S.reservas.filter(r=>new Date(r.fecha).getFullYear()==S.anioFiltro):S.reservas;
-  const primerDia=new Date(y,m,1).getDay();
-  const diasMes=new Date(y,m+1,0).getDate();
+  const pd=new Date(y,m,1).getDay();const dm=new Date(y,m+1,0).getDate();
   const hoy=new Date();hoy.setHours(0,0,0,0);
-  const DIAS_CORTO=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  let h=DIAS_CORTO.map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  for(let i=0;i<primerDia;i++){const dd=new Date(y,m,1-primerDia+i);h+=`<div class="cal-cell other-month"><div class="cal-day">${dd.getDate()}</div></div>`;}
-  for(let d=1;d<=diasMes;d++){
-    const f=new Date(y,m,d);f.setHours(0,0,0,0);
-    const iso=isoDate(f);
-    const isHoy=f.getTime()===hoy.getTime();
+  const DOW=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  let h=DOW.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
+  for(let i=0;i<pd;i++){const dd=new Date(y,m,1-pd+i);h+='<div class="cal-cell other-month"><div class="cal-day">'+dd.getDate()+'</div></div>';}
+  for(let d=1;d<=dm;d++){
+    const f=new Date(y,m,d);f.setHours(0,0,0,0);const iso=isoDate(f);const isH=f.getTime()===hoy.getTime();
     const evs=all.filter(r=>isoDate(r.fecha)===iso);
-    h+=`<div class="cal-cell${isHoy?' today':''}" onclick="calClick('${iso}')">
-      <div class="cal-day" style="${isHoy?'color:var(--primary-dark);font-size:12px':''}">${d}</div>
-      ${evs.slice(0,3).map(r=>`<div class="cal-ev${getTipo(r)==='paseo'?' paseo':''}" onclick="event.stopPropagation();verReserva('${r.id}')">${r.plan||''} ${r.cumple||r.apoderado||''}</div>`).join('')}
-      ${evs.length>3?`<div style="font-size:9px;color:var(--text-muted)">+${evs.length-3} más</div>`:''}
-    </div>`;
+    h+='<div class="cal-cell'+(isH?' today':'')+'" onclick="calClick(\''+iso+'\')">';
+    h+='<div class="cal-day" style="'+(isH?'color:var(--primary-dark);font-weight:800':'')+'">' +d+'</div>';
+    evs.slice(0,3).forEach(r=>{h+='<div class="cal-ev'+(getTipo(r)==='paseo'?' paseo':'')+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')">'+(r.plan||'')+' '+(r.cumple||r.apoderado||'')+'</div>';});
+    if(evs.length>3)h+='<div style="font-size:9px;color:var(--text-muted)">+'+(evs.length-3)+' más</div>';
+    h+='</div>';
   }
-  const resto=(primerDia+diasMes)%7;
-  if(resto!==0)for(let i=1;i<=7-resto;i++)h+=`<div class="cal-cell other-month"><div class="cal-day">${i}</div></div>`;
+  const resto=(pd+dm)%7;if(resto!==0)for(let i=1;i<=7-resto;i++)h+='<div class="cal-cell other-month"><div class="cal-day">'+i+'</div></div>';
   document.getElementById('cal-grid').innerHTML=h;
 }
-window.calClick=function(iso){document.getElementById('r-fecha').value=iso;updateDia();openNueva();};
+function calClick(iso){document.getElementById('r-fecha').value=iso;updateDia();openNueva();}
 
-// ── SEGUIMIENTO ──
-window.renderSeg=function(){
+function renderSeg(){
   let rs=[...S.reservas];
-  const anio=document.getElementById('f-anio').value;
-  const tipo=document.getElementById('f-tipo').value;
-  const pago=document.getElementById('f-pago').value;
-  const bus=document.getElementById('f-buscar').value.toLowerCase();
+  const anio=document.getElementById('f-anio').value;const tipo=document.getElementById('f-tipo').value;
+  const pago=document.getElementById('f-pago').value;const bus=(document.getElementById('f-buscar').value||'').toLowerCase();
   if(anio)rs=rs.filter(r=>new Date(r.fecha).getFullYear()==Number(anio));
   if(tipo)rs=rs.filter(r=>getTipo(r)===tipo);
-  if(pago==='ok')rs=rs.filter(r=>pendiente(r)<=0);
-  if(pago==='pend')rs=rs.filter(r=>pendiente(r)>0);
+  if(pago==='ok')rs=rs.filter(r=>pend(r)<=0);if(pago==='pend')rs=rs.filter(r=>pend(r)>0);
   if(bus)rs=rs.filter(r=>(r.cumple||'').toLowerCase().includes(bus)||(r.apoderado||'').toLowerCase().includes(bus)||(r.cobrador||'').toLowerCase().includes(bus));
   rs.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   document.getElementById('seg-count').textContent=rs.length;
   const tot=rs.reduce((s,r)=>s+(Number(r.monto)||0),0);
-  document.getElementById('seg-total-monto').textContent=rs.length?`Total: ${fmtM(tot)}`:'';
+  document.getElementById('seg-monto-total').textContent=rs.length?'Total: '+fmtM(tot):'';
   const tbody=document.getElementById('seg-tbody');
   if(!rs.length){tbody.innerHTML='';document.getElementById('seg-empty').style.display='';return;}
   document.getElementById('seg-empty').style.display='none';
-  tbody.innerHTML=rs.map(r=>{
-    const p=pendiente(r);
-    return `<tr onclick="verReserva('${r.id}')" style="cursor:pointer">
-      <td style="white-space:nowrap"><strong>${fmtF(r.fecha)}</strong></td>
-      <td style="font-size:11px;color:var(--text-muted)">${r.dia||DIAS_FULL[new Date(r.fecha).getDay()]||''}</td>
-      <td><span class="badge badge-gray" style="font-size:9.5px">${r.plan||'–'}</span></td>
-      <td><strong>${r.cumple||'–'}</strong></td><td>${r.apoderado||'–'}</td>
-      <td style="color:var(--text-muted);font-size:11px">${r.fono||'–'}</td>
-      <td><strong>${fmtM(r.monto)}</strong></td>
-      <td style="color:var(--grass)">${fmtM(r.pagado)}</td>
-      <td style="font-size:11px">${r.banco||'–'}</td>
-      <td>${r.boleta?`<span class="badge badge-sky">#${r.boleta}</span>`:'–'}</td>
-      <td>${r.inv?`<span class="inv-tag">${r.inv}</span>`:'–'}</td>
-      <td style="font-size:11px">${r.cobrador||'–'}</td>
-      <td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.obs||''}">${r.obs||''}</td>
-      <td onclick="event.stopPropagation()">
-        <button class="btn btn-outline btn-sm" onclick="editarR('${r.id}')">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="eliminarR('${r.id}')">🗑️</button>
-      </td>
-    </tr>`;
-  }).join('');
-};
+  tbody.innerHTML=rs.map(r=>{const p=pend(r);return'<tr onclick="verReserva(\''+r.id+'\'" style="cursor:pointer" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))"><td style="white-space:nowrap"><strong>'+fmtF(r.fecha)+'</strong></td><td style="font-size:11px;color:var(--text-muted)">'+(r.dia||DIAS_FULL[new Date(r.fecha).getDay()]||'')+'</td><td><span class="badge badge-gray" style="font-size:9.5px">'+(r.plan||'–')+'</span></td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td style="color:var(--text-muted);font-size:11px">'+(r.fono||'–')+'</td><td><strong>'+fmtM(r.monto)+'</strong></td><td style="color:var(--grass)">'+fmtM(r.pagado)+'</td><td style="font-size:11px">'+(r.banco||'–')+'</td><td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td><td>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'–')+'</td><td style="font-size:11px">'+(r.cobrador||'–')+'</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.obs||'')+'</td><td onclick="event.stopPropagation()" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))">✏️</button> <button class="btn btn-danger btn-sm" onclick="eliminarR(\''+r.id+'\')">🗑️</button></td></tr>';}).join('');
+}
 
-// ── PAGOS ──
-window.renderPagos=function(){
+function renderPagos(){
   let rs=[...S.reservas];
-  const anio=document.getElementById('fp-anio').value;
-  const tipo=document.getElementById('fp-tipo').value;
+  const anio=document.getElementById('fp-anio').value;const tipo=document.getElementById('fp-tipo').value;
   if(anio)rs=rs.filter(r=>new Date(r.fecha).getFullYear()==Number(anio));
   if(tipo)rs=rs.filter(r=>getTipo(r)===tipo);
   rs.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
-  const totAc=rs.reduce((s,r)=>s+(Number(r.monto)||0),0);
-  const totPag=rs.reduce((s,r)=>s+(Number(r.pagado)||0),0);
-  document.getElementById('pagos-resumen-stats').innerHTML=`
-    <div class="stat-card"><div class="label">Total reservas</div><div class="value">${rs.length}</div></div>
-    <div class="stat-card grass"><div class="label">Total acordado</div><div class="value" style="font-size:18px">${fmtM(totAc)}</div></div>
-    <div class="stat-card sky"><div class="label">Cobrado</div><div class="value" style="font-size:18px">${fmtM(totPag)}</div></div>
-    <div class="stat-card coral"><div class="label">Pendiente</div><div class="value" style="font-size:18px">${fmtM(totAc-totPag)}</div></div>`;
+  const tAc=rs.reduce((s,r)=>s+(Number(r.monto)||0),0);const tPag=rs.reduce((s,r)=>s+(Number(r.pagado)||0),0);
+  document.getElementById('pagos-stats').innerHTML='<div class="stat-card"><div class="label">Total reservas</div><div class="value">'+rs.length+'</div></div><div class="stat-card grass"><div class="label">Total acordado</div><div class="value" style="font-size:18px">'+fmtM(tAc)+'</div></div><div class="stat-card sky"><div class="label">Cobrado</div><div class="value" style="font-size:18px">'+fmtM(tPag)+'</div></div><div class="stat-card coral"><div class="label">Pendiente</div><div class="value" style="font-size:18px">'+fmtM(tAc-tPag)+'</div></div>';
   const tbody=document.getElementById('pagos-tbody');
   if(!rs.length){tbody.innerHTML='';document.getElementById('pagos-empty').style.display='';return;}
   document.getElementById('pagos-empty').style.display='none';
-  tbody.innerHTML=rs.map(r=>{
-    const diff=pendiente(r);
-    return `<tr onclick="verReserva('${r.id}')" style="cursor:pointer">
-      <td style="white-space:nowrap">${fmtF(r.fecha)}</td><td><strong>${r.cumple||'–'}</strong></td>
-      <td>${r.apoderado||'–'}</td><td><span class="badge badge-gray">${r.plan||'–'}</span></td>
-      <td>${fmtM(r.monto)}</td><td style="color:var(--grass)">${fmtM(r.pagado)}</td>
-      <td>${diff>0?`<span style="color:var(--coral);font-weight:700">${fmtM(diff)}</span>`:'<span style="color:var(--grass)">✓ Al día</span>'}</td>
-      <td style="font-size:11px">${r.banco||'–'}</td>
-      <td>${r.boleta?`<span class="badge badge-sky">#${r.boleta}</span>`:'–'}</td>
-      <td>${diff>0?'<span class="badge badge-coral">Pendiente</span>':'<span class="badge badge-grass">Pagado</span>'}</td>
-    </tr>`;
-  }).join('');
-};
-
-// ── RESUMEN ──
-function renderResumen(){
-  const all=S.reservas;
-  const cumples=all.filter(r=>getTipo(r)!=='paseo').length;
-  const paseos=all.filter(r=>getTipo(r)==='paseo').length;
-  const totP=all.reduce((s,r)=>s+(Number(r.pagado)||0),0);
-  document.getElementById('res-stats').innerHTML=`
-    <div class="stat-card primary"><div class="label">Total histórico</div><div class="value">${all.length}</div><div class="sub">reservas totales</div></div>
-    <div class="stat-card grass"><div class="label">Cumpleaños</div><div class="value">${cumples}</div></div>
-    <div class="stat-card sky"><div class="label">Paseos de curso</div><div class="value">${paseos}</div></div>
-    <div class="stat-card coral"><div class="label">Recaudación total</div><div class="value" style="font-size:16px">${fmtM(totP)}</div></div>`;
-  // Por año
-  const byAnio={};
-  all.forEach(r=>{const y=new Date(r.fecha).getFullYear();byAnio[y]=(byAnio[y]||0)+1;});
-  const maxA=Math.max(...Object.values(byAnio),1);
-  document.getElementById('res-anios').innerHTML=Object.entries(byAnio).sort((a,b)=>b[0]-a[0]).map(([y,n])=>`
-    <div class="bar-row"><div class="bar-label">${y}</div>
-    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxA*100)}%"></div></div>
-    <div class="bar-val">${n}</div></div>`).join('');
-  // Planes
-  const byPlan={};
-  all.forEach(r=>{if(r.plan)byPlan[r.plan]=(byPlan[r.plan]||0)+1;});
-  const topP=Object.entries(byPlan).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxP=topP[0]?topP[0][1]:1;
-  document.getElementById('res-planes').innerHTML=topP.map(([p,n])=>`
-    <div class="bar-row"><div class="bar-label" style="width:80px">${p}</div>
-    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxP*100)}%"></div></div>
-    <div class="bar-val">${n}</div></div>`).join('');
-  // Temáticas
-  const byTema={};
-  all.forEach(r=>{if(r.inv&&r.inv.toLowerCase()!=='no quiso')byTema[r.inv]=(byTema[r.inv]||0)+1;});
-  const topT=Object.entries(byTema).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxT=topT[0]?topT[0][1]:1;
-  document.getElementById('res-temas').innerHTML=topT.length?topT.map(([t,n])=>`
-    <div class="bar-row"><div class="bar-label" style="font-size:11px">${t}</div>
-    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxT*100)}%"></div></div>
-    <div class="bar-val">${n}</div></div>`).join(''):'<div class="empty"><span class="icon">🎨</span>Sin datos</div>';
-  // Por mes
-  const byMes=Array(12).fill(0);
-  all.forEach(r=>{byMes[new Date(r.fecha).getMonth()]++;});
-  const maxMes=Math.max(...byMes,1);
-  document.getElementById('res-meses').innerHTML=MESES.map((m,i)=>`
-    <div class="bar-row"><div class="bar-label" style="width:80px;font-size:11px">${m.slice(0,3)}</div>
-    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(byMes[i]/maxMes*100)}%"></div></div>
-    <div class="bar-val">${byMes[i]}</div></div>`).join('');
+  tbody.innerHTML=rs.map(r=>{const d=pend(r);return'<tr onclick="verReserva(\''+r.id+'\'" style="cursor:pointer" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))"><td style="white-space:nowrap">'+fmtF(r.fecha)+'</td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td><span class="badge badge-gray">'+(r.plan||'–')+'</span></td><td>'+fmtM(r.monto)+'</td><td style="color:var(--grass)">'+fmtM(r.pagado)+'</td><td>'+(d>0?'<span style="color:var(--coral);font-weight:700">'+fmtM(d)+'</span>':'<span style="color:var(--grass)">✓ Al día</span>')+'</td><td style="font-size:11px">'+(r.banco||'–')+'</td><td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td><td>'+(d>0?'<span class="badge badge-coral">Pendiente</span>':'<span class="badge badge-grass">Pagado</span>')+'</td></tr>';}).join('');
 }
 
-// ── IMPORTAR EXCEL ──
-// Arrastre
-const zone=document.getElementById('import-zone');
-zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
-zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
-zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');handleFile(e.dataTransfer.files[0]);});
+function renderResumen(){
+  const all=S.reservas;
+  document.getElementById('res-stats').innerHTML='<div class="stat-card primary"><div class="label">Total histórico</div><div class="value">'+all.length+'</div><div class="sub">todas las reservas</div></div><div class="stat-card grass"><div class="label">Cumpleaños</div><div class="value">'+all.filter(r=>getTipo(r)!=='paseo').length+'</div></div><div class="stat-card sky"><div class="label">Paseos</div><div class="value">'+all.filter(r=>getTipo(r)==='paseo').length+'</div></div><div class="stat-card coral"><div class="label">Total cobrado</div><div class="value" style="font-size:16px">'+fmtM(all.reduce((s,r)=>s+(Number(r.pagado)||0),0))+'</div></div>';
+  function bars(obj,elId){const max=Math.max(...Object.values(obj),1);const el=document.getElementById(elId);if(!el)return;el.innerHTML=Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([k,n])=>'<div class="bar-row"><div class="bar-label" style="font-size:11px">'+k+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(n/max*100)+'%"></div></div><div class="bar-val">'+n+'</div></div>').join('')||'<div class="empty"><span class="icon">📊</span>Sin datos</div>';}
+  const byA={};all.forEach(r=>{const y=new Date(r.fecha).getFullYear();if(y)byA[y]=(byA[y]||0)+1;});const byAS={};Object.keys(byA).sort((a,b)=>b-a).forEach(k=>byAS[k]=byA[k]);bars(byAS,'res-anios');
+  const byP={};all.forEach(r=>{if(r.plan)byP[r.plan]=(byP[r.plan]||0)+1;});bars(Object.fromEntries(Object.entries(byP).sort((a,b)=>b[1]-a[1]).slice(0,8)),'res-planes');
+  const byT={};all.forEach(r=>{if(r.inv&&r.inv.toLowerCase()!=='no quiso')byT[r.inv]=(byT[r.inv]||0)+1;});bars(Object.fromEntries(Object.entries(byT).sort((a,b)=>b[1]-a[1]).slice(0,8)),'res-temas');
+  const byM=Array(12).fill(0);all.forEach(r=>{byM[new Date(r.fecha).getMonth()]++;});const mD={};MESES.forEach((m,i)=>{if(byM[i])mD[m.slice(0,3)]=byM[i];});bars(mD,'res-meses');
+}
 
-window.handleFile=function(file){
+// IMPORTAR
+document.addEventListener('DOMContentLoaded',function(){
+  const zone=document.getElementById('import-zone');
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
+  zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');handleFile(e.dataTransfer.files[0]);});
+});
+
+function handleFile(file){
   if(!file)return;
-  if(!file.name.match(/\.xlsx?$/i)){
-    document.getElementById('import-status').innerHTML='<div class="alert alert-danger">❌ Solo se admiten archivos .xlsx o .xls</div>';return;
-  }
+  if(!file.name.match(/\.xlsx?$/i)){document.getElementById('import-status').innerHTML='<div class="alert alert-danger">❌ Solo .xlsx o .xls</div>';return;}
   const reader=new FileReader();
   reader.onload=function(e){
     try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});
-      const LOCAL_ID='yelou_reservas'.includes('girasoles')?'G':'Y';
-      const matchingSheets=wb.SheetNames.filter(n=>n.trim().toUpperCase().startsWith(LOCAL_ID));
-      const allSheets=wb.SheetNames;
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});window._wb=wb;
+      const matching=wb.SheetNames.filter(n=>n.trim().toUpperCase().startsWith(LOCAL_PREFIX));
+      document.getElementById('sheet-tab-list').innerHTML=wb.SheetNames.map(s=>'<span class="sheet-tab'+(matching.includes(s)?' active':'')+'" onclick="toggleSheet(this)" data-sheet="'+s+'">'+s+'</span>').join('');
       document.getElementById('sheet-tabs').style.display='';
-      // Mostrar info de coincidencia
-      const matchInfo=document.getElementById('import-match-info');
-      if(matchingSheets.length>0){
-        matchInfo.style.display='flex';
-        matchInfo.innerHTML=`✅ Se encontraron ${matchingSheets.length} hoja(s) para este local (${LOCAL_ID}): <strong>${matchingSheets.join(', ')}</strong>`;
-      }else{
-        matchInfo.style.display='flex';
-        matchInfo.textContent=`ℹ️ No se encontraron hojas con prefijo ${LOCAL_ID}. Selecciona manualmente las hojas relevantes.`;
-        matchInfo.className='alert alert-warn';matchInfo.style.display='flex';
-      }
-      // Generar tabs de todas las hojas
-      const tabList=document.getElementById('sheet-tab-list');
-      tabList.innerHTML=allSheets.map((s,i)=>`<span class="sheet-tab${matchingSheets.includes(s)?' active':''}" 
-        onclick="toggleSheet(this,'${s.replace(/'/g,"\'")}')" data-sheet="${s}">${s}</span>`).join('');
-      // Guardar workbook en window para acceso en toggleSheet
-      window._wb=wb;
-      // Auto-parsear hojas que coincidan
-      S.importRows=[];
-      if(matchingSheets.length>0){
-        matchingSheets.forEach(sn=>{
-          const rows=parseSheet(wb.Sheets[sn],sn);
-          S.importRows.push(...rows);
-        });
-        renderPreview();
-      }
-    }catch(err){
-      document.getElementById('import-status').innerHTML=`<div class="alert alert-danger">❌ Error leyendo archivo: ${err.message}</div>`;
-    }
-  };
-  reader.readAsArrayBuffer(file);
-};
+      const info=document.getElementById('import-match-info');info.style.display='';
+      if(matching.length>0){info.className='alert alert-success';info.innerHTML='✅ '+matching.length+' hoja(s) para '+LOCAL_PREFIX+': <strong>'+matching.join(', ')+'</strong>';}
+      else{info.className='alert alert-warn';info.innerHTML='ℹ️ No se encontraron hojas con prefijo '+LOCAL_PREFIX+'. Selecciona manualmente.';}
+      S.importRows=[];matching.forEach(sn=>{S.importRows.push(...parseSheet(wb.Sheets[sn],sn));});renderPreview();
+    }catch(err){document.getElementById('import-status').innerHTML='<div class="alert alert-danger">❌ '+err.message+'</div>';}
+  };reader.readAsArrayBuffer(file);
+}
 
-window.toggleSheet=function(el,sheetName){
-  el.classList.toggle('active');
-  const wb=window._wb; if(!wb)return;
-  // Recalcular importRows desde todas las hojas activas
-  const activeTabs=document.querySelectorAll('.sheet-tab.active');
-  S.importRows=[];
-  activeTabs.forEach(tab=>{
-    const sn=tab.dataset.sheet;
-    if(wb.Sheets[sn])S.importRows.push(...parseSheet(wb.Sheets[sn],sn));
-  });
+function toggleSheet(el){
+  el.classList.toggle('active');S.importRows=[];
+  document.querySelectorAll('.sheet-tab.active').forEach(tab=>{if(window._wb&&window._wb.Sheets[tab.dataset.sheet])S.importRows.push(...parseSheet(window._wb.Sheets[tab.dataset.sheet],tab.dataset.sheet));});
   renderPreview();
-};
+}
 
-function parseSheet(ws, sheetName) {
-  const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
-  if(!json.length)return[];
-  // Encontrar fila de encabezado
-  let headerIdx=0;
-  for(let i=0;i<Math.min(5,json.length);i++){
-    const row=json[i].map(c=>String(c).toUpperCase().trim());
-    if(row.some(c=>c.includes('FECHA')||c.includes('HORARIO')||c.includes('MONTO')||c.includes('PAGO'))){headerIdx=i;break;}
-  }
-  const header=json[headerIdx].map(c=>String(c).toUpperCase().trim());
-  // Mapeo de columnas
-  function col(names){for(const n of names){const i=header.findIndex(h=>h.includes(n));if(i>=0)return i;}return -1;}
-  const cFecha=col(['FECHA']);
-  const cTipo=col(['TIPO Y HORARIO','HORARIO/TIPO','HORARIO','TIPO']);
-  const cCumple=col(['CUMPLEAÑER','CUMPLEANER','CUMPLE']);
-  const cApod=col(['MAMA','APODERADO']);
-  const cFono=col(['TELEFONO','FONO','PHONE']);
-  const cMonto=col(['PAGO','MONTO','TOTAL']);
-  const cBanco=col(['BANCO','DETALLE']);
-  const cBoleta=col(['BOLETA']);
-  const cInv=col(['INVITACION','INV']);
-  const cDia=col(['DIA']);
-  const cCobrador=col(['A:','COBRADOR','QUIEN']);
-  const cObs=col(['OBSERV']);
+function parseSheet(ws,sheetName){
+  const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});if(!json.length)return[];
+  let hi=0;for(let i=0;i<Math.min(5,json.length);i++){const r=json[i].map(c=>String(c).toUpperCase().trim());if(r.some(c=>c.includes('FECHA')||c.includes('HORARIO')||c.includes('MONTO')||c.includes('PAGO'))){hi=i;break;}}
+  const h=json[hi].map(c=>String(c).toUpperCase().trim());
+  function col(){const ns=[...arguments];for(const n of ns){const i=h.findIndex(x=>x.includes(n));if(i>=0)return i;}return -1;}
+  const cF=col('FECHA'),cT=col('TIPO Y HORARIO','HORARIO/TIPO','HORARIO','TIPO'),cC=col('CUMPLEAÑER','CUMPLEANER','CUMPLE');
+  const cA=col('MAMA','APODERADO'),cFo=col('TELEFONO','FONO'),cM=col('PAGO','MONTO','TOTAL');
+  const cB=col('BANCO','DETALLE'),cBo=col('BOLETA'),cI=col('INVITACION','INV'),cD=col('DIA');
   const rows=[];
-  for(let i=headerIdx+1;i<json.length;i++){
-    const row=json[i];
-    if(!row||row.every(c=>c===''||c===null||c===undefined))continue;
-    let rawFecha=cFecha>=0?row[cFecha]:'';
-    if(rawFecha===''||rawFecha===null||rawFecha===undefined)continue;
-    // Convertir número serial Excel a fecha
-    let fecha;
-    if(typeof rawFecha==='number'){
-      // Excel serial: días desde 1900-01-01 (con bug de 1900 como bisiesto)
-      const d=new Date(Math.round((rawFecha-25569)*86400*1000));
-      fecha=new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
-    }else if(rawFecha instanceof Date){fecha=rawFecha;}
-    else{fecha=new Date(rawFecha);}
+  for(let i=hi+1;i<json.length;i++){
+    const row=json[i];if(!row||row.every(c=>c===''||c===null||c===undefined))continue;
+    let rawF=cF>=0?row[cF]:'';if(rawF===''||rawF===null||rawF===undefined)continue;
+    let fecha;if(typeof rawF==='number'){const d=new Date(Math.round((rawF-25569)*86400*1000));fecha=new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());}
+    else if(rawF instanceof Date){fecha=rawF;}else{fecha=new Date(rawF);}
     if(isNaN(fecha)||fecha.getFullYear()<2000||fecha.getFullYear()>2030)continue;
-    const plan=String(cTipo>=0?row[cTipo]||'':'').trim();
-    const monto=Number(String(cMonto>=0?row[cMonto]||0:0).replace(/[^0-9.-]/g,''))||0;
-    const banco=String(cBanco>=0?row[cBanco]||'':'').trim();
-    // Si hay banco/detalle, asumimos que está pagado (histórico)
-    const pagado=banco&&banco!=='–'?monto:0;
-    rows.push({
-      fecha,
-      dia: cDia>=0?String(row[cDia]||'').trim():DIAS_FULL[fecha.getDay()],
-      plan: plan||'',
-      tipo: plan.toLowerCase().includes('paseo')?'paseo':'cumple',
-      cumple: String(cCumple>=0?row[cCumple]||'':'').trim(),
-      apoderado: String(cApod>=0?row[cApod]||'':'').trim(),
-      fono: String(cFono>=0?row[cFono]||'':'').trim(),
-      monto, pagado,
-      banco,
-      boleta: String(cBoleta>=0?row[cBoleta]||'':'').trim(),
-      inv: String(cInv>=0?row[cInv]||'':'').trim(),
-      cobrador: String(cCobrador>=0?row[cCobrador]||'':'').trim(),
-      obs: String(cObs>=0?row[cObs]||'':'').trim(),
-      _sheet: sheetName,
-    });
+    const plan=String(cT>=0?row[cT]||'':'').trim();const monto=Number(String(cM>=0?row[cM]||0:0).replace(/[^0-9.-]/g,''))||0;
+    const banco=String(cB>=0?row[cB]||'':'').trim();
+    rows.push({fecha,dia:cD>=0?String(row[cD]||'').trim():DIAS_FULL[fecha.getDay()],plan:plan||'',tipo:plan.toLowerCase().includes('paseo')?'paseo':'cumple',
+      cumple:String(cC>=0?row[cC]||'':'').trim(),apoderado:String(cA>=0?row[cA]||'':'').trim(),
+      fono:String(cFo>=0?row[cFo]||'':'').trim(),monto,pagado:banco&&banco!=='–'?monto:0,banco,
+      boleta:String(cBo>=0?row[cBo]||'':'').trim(),inv:String(cI>=0?row[cI]||'':'').trim(),cobrador:'',obs:'',_sheet:sheetName});
   }
   return rows;
 }
 
 function renderPreview(){
-  const rs=S.importRows;
-  if(!rs.length){document.getElementById('import-preview').style.display='none';return;}
-  document.getElementById('import-preview').style.display='';
-  document.getElementById('preview-count').textContent=rs.length;
-  document.getElementById('btn-confirmar-import').textContent=`✅ Importar ${rs.length} registros`;
-  const tbody=document.getElementById('preview-tbody');
-  tbody.innerHTML=rs.slice(0,200).map((r,i)=>`<tr>
-    <td style="color:var(--text-muted)">${i+1}</td>
-    <td style="white-space:nowrap">${fmtF(r.fecha)}</td>
-    <td style="font-size:11px;color:var(--text-muted)">${r._sheet||''}</td>
-    <td><span class="badge badge-gray" style="font-size:9px">${r.plan||'–'}</span></td>
-    <td><strong>${r.cumple||'–'}</strong></td><td>${r.apoderado||'–'}</td>
-    <td style="font-size:11px">${r.fono||'–'}</td>
-    <td>${fmtM(r.monto)}</td><td style="font-size:11px">${r.banco||'–'}</td>
-    <td>${r.boleta||'–'}</td>
-    <td>${r.inv?`<span class="inv-tag" style="font-size:9px">${r.inv}</span>`:'–'}</td>
-  </tr>`).join('');
-  if(rs.length>200)tbody.innerHTML+=`<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:12px">... y ${rs.length-200} registros más</td></tr>`;
+  const rs=S.importRows;if(!rs.length){document.getElementById('import-preview').style.display='none';return;}
+  document.getElementById('import-preview').style.display='';document.getElementById('preview-count').textContent=rs.length;document.getElementById('btn-import').textContent='✅ Importar '+rs.length+' registros';
+  document.getElementById('preview-tbody').innerHTML=rs.slice(0,150).map((r,i)=>'<tr><td style="color:var(--text-muted)">'+(i+1)+'</td><td style="white-space:nowrap">'+fmtF(r.fecha)+'</td><td><span class="badge badge-gray" style="font-size:9px">'+(r.plan||'–')+'</span></td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td style="font-size:11px">'+(r.fono||'–')+'</td><td>'+fmtM(r.monto)+'</td><td style="font-size:11px">'+(r.banco||'–')+'</td><td>'+(r.boleta||'–')+'</td><td>'+(r.inv?'<span class="inv-tag" style="font-size:9px">'+r.inv+'</span>':'–')+'</td></tr>').join('');
+  if(rs.length>150)document.getElementById('preview-tbody').innerHTML+='<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:10px">...y '+(rs.length-150)+' registros más</td></tr>';
 }
 
-window.clearImport=function(){
-  S.importRows=[];
-  document.getElementById('import-preview').style.display='none';
-  document.getElementById('sheet-tabs').style.display='none';
-  document.getElementById('import-status').innerHTML='';
-  document.getElementById('file-input').value='';
-  window._wb=null;
-};
+function clearImport(){S.importRows=[];['import-preview','sheet-tabs'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('import-status').innerHTML='';document.getElementById('file-input').value='';window._wb=null;}
 
-window.confirmarImport=async function(){
-  const rows=S.importRows;
-  if(!rows.length)return;
-  if(!confirm(`¿Importar ${rows.length} registros a Yelou? Los datos existentes no se modificarán.`))return;
-  
-  // Detectar duplicados (misma fecha + apoderado)
-  const existingKeys=new Set(S.reservas.map(r=>isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()));
-  const nuevos=rows.filter(r=>!existingKeys.has(isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()));
+async function confirmarImport(){
+  const rows=S.importRows;if(!rows.length)return;
+  if(!confirm('¿Importar '+rows.length+' registros a '+LOCAL_NAME+'? Los duplicados se omitirán.'))return;
+  const existKeys=new Set(S.reservas.map(r=>isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()));
+  const nuevos=rows.filter(r=>!existKeys.has(isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()));
   const dupes=rows.length-nuevos.length;
-  
-  document.getElementById('import-progress').style.display='';
-  document.getElementById('import-preview').style.display='none';
-  
-  let importados=0;
-  const total=nuevos.length;
-  
-  if(useFirebase){
-    // Importar en batches de 400 (límite Firestore = 500)
-    const batchSize=400;
-    for(let i=0;i<nuevos.length;i+=batchSize){
-      const batch=writeBatch(db);
-      const chunk=nuevos.slice(i,i+batchSize);
-      chunk.forEach(r=>{
-        const ref=doc(collection(db,COLLECTION));
-        batch.set(ref,{...r,fecha:r.fecha,createdAt:new Date(),importedFrom:r._sheet||'excel'});
-      });
-      await batch.commit();
-      importados+=chunk.length;
-      const pct=Math.round(importados/total*100);
-      document.getElementById('progress-bar').style.width=pct+'%';
-      document.getElementById('progress-label').textContent=`${importados} / ${total} (${pct}%)`;
+  document.getElementById('import-progress').style.display='';document.getElementById('import-preview').style.display='none';
+  let importados=0;const total=nuevos.length;
+  if(S.useFirebase&&total>0){
+    for(let i=0;i<nuevos.length;i+=400){
+      const batch=S.db.batch();const chunk=nuevos.slice(i,i+400);
+      chunk.forEach(r=>{const ref=S.db.collection(COLLECTION).doc();const d={...r,fecha:firebase.firestore.Timestamp.fromDate(r.fecha),createdAt:firebase.firestore.FieldValue.serverTimestamp(),importedFrom:r._sheet||'excel'};delete d._sheet;batch.set(ref,d);});
+      await batch.commit();importados+=chunk.length;const pct=Math.round(importados/total*100);
+      document.getElementById('progress-bar').style.width=pct+'%';document.getElementById('progress-label').textContent=importados+' / '+total+' ('+pct+'%)';
     }
-    // Recargar datos
-    const snap=await getDocs(query(collection(db,COLLECTION),orderBy('fecha','desc')));
-    S.reservas=snap.docs.map(d=>{const dt=d.data();return{id:d.id,...dt,fecha:dt.fecha?.toDate?dt.fecha.toDate():new Date(dt.fecha)};}); 
-  }else{
-    // Demo mode: solo local
-    nuevos.forEach(r=>{S.reservas.push({id:'imp_'+Date.now()+'_'+Math.random(),...r});});
-    importados=nuevos.length;
-    document.getElementById('progress-bar').style.width='100%';
-    document.getElementById('progress-label').textContent=`${importados} / ${total}`;
-  }
-  
-  // Guardar log
-  const log={fecha:new Date(),total:rows.length,importados:nuevos.length,dupes,archivo:window._wb?.fileName||'archivo.xlsx'};
-  S.importLogs.unshift(log);
-  try{localStorage.setItem('yelou_reservas_import_logs',JSON.stringify(S.importLogs.slice(0,10)));}catch(e){}
-  
-  setTimeout(()=>{
-    document.getElementById('import-progress').style.display='none';
-    document.getElementById('import-status').innerHTML=`<div class="alert alert-success">✅ Importación completada: <strong>${importados} registros nuevos</strong> agregados${dupes>0?` · ${dupes} duplicados omitidos`:''}</div>`;
-    clearImport();
-    populateAnios(); renderAll(); loadImportLog();
-  },800);
-};
+    await load();
+  }else{nuevos.forEach(r=>{S.reservas.push({id:'imp_'+Date.now()+'_'+Math.random(),...r});});importados=nuevos.length;document.getElementById('progress-bar').style.width='100%';document.getElementById('progress-label').textContent=importados+' / '+total;}
+  const log={fecha:new Date(),total:rows.length,importados:nuevos.length,dupes};S.importLogs.unshift(log);
+  try{localStorage.setItem(COLLECTION+'_logs',JSON.stringify(S.importLogs.slice(0,10)));}catch(e){}
+  setTimeout(()=>{document.getElementById('import-progress').style.display='none';document.getElementById('import-status').innerHTML='<div class="alert alert-success">✅ '+importados+' registros importados'+(dupes>0?' · '+dupes+' duplicados omitidos':'')+'.</div>';clearImport();populateAnios();renderAll();loadImportLog();},600);
+}
 
 function loadImportLog(){
-  try{S.importLogs=JSON.parse(localStorage.getItem('yelou_reservas_import_logs'))||[];}catch(e){S.importLogs=[];}
+  try{S.importLogs=JSON.parse(localStorage.getItem(COLLECTION+'_logs'))||[];}catch(e){S.importLogs=[];}
   const el=document.getElementById('import-historial');
   if(!S.importLogs.length){el.innerHTML='<div class="empty"><span class="icon">📁</span>Sin importaciones previas</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Fecha</th><th>Archivo</th><th>Registros</th><th>Importados</th><th>Duplicados omitidos</th></tr></thead><tbody>${
-    S.importLogs.map(l=>`<tr>
-      <td>${fmtF(new Date(l.fecha))}</td><td style="font-size:11px">${l.archivo||'–'}</td>
-      <td>${l.total}</td><td style="color:var(--grass);font-weight:700">${l.importados}</td>
-      <td style="color:var(--text-muted)">${l.dupes||0}</td>
-    </tr>`).join('')
-  }</tbody></table>`;
+  el.innerHTML='<table><thead><tr><th>Fecha</th><th>Registros</th><th>Importados</th><th>Duplicados omitidos</th></tr></thead><tbody>'+S.importLogs.map(l=>'<tr><td>'+fmtF(new Date(l.fecha))+'</td><td>'+l.total+'</td><td style="color:var(--grass);font-weight:700">'+l.importados+'</td><td style="color:var(--text-muted)">'+(l.dupes||0)+'</td></tr>').join('')+'</tbody></table>';
 }
 
-// ── MODAL NUEVA/EDITAR ──
-window.openNueva=function(r){
-  S.editId=r?r.id:null;
-  document.getElementById('modal-r-title').textContent=r?'✏️ Editar Reserva':'🎂 Nueva Reserva — Yelou';
-  const hoyISO=isoDate(new Date());
-  document.getElementById('r-fecha').value=r?.fecha?isoDate(r.fecha):(document.getElementById('r-fecha').value||hoyISO);
-  document.getElementById('r-tipo').value=r?.tipo||'cumple';
-  document.getElementById('r-plan').value=r?.plan||'PM A';
-  document.getElementById('r-cumple').value=r?.cumple||'';
-  document.getElementById('r-apoderado').value=r?.apoderado||'';
-  document.getElementById('r-fono').value=r?.fono||'';
-  document.getElementById('r-inv').value=r?.inv||'';
-  document.getElementById('r-monto').value=r?.monto||'';
-  document.getElementById('r-pagado').value=r?.pagado||'';
-  document.getElementById('r-banco').value=r?.banco||'';
-  document.getElementById('r-boleta').value=r?.boleta||'';
-  document.getElementById('r-cobrador').value=r?.cobrador||'';
-  document.getElementById('r-obs').value=r?.obs||'';
-  updateDia();
-  document.getElementById('modal-reserva').classList.remove('hidden');
-};
-window.closeModal=function(){document.getElementById('modal-reserva').classList.add('hidden');S.editId=null;};
-function updateDia(){
-  const f=document.getElementById('r-fecha').value;
-  if(f){const d=new Date(f+'T12:00:00');document.getElementById('r-dia').value=DIAS_FULL[d.getDay()];document.getElementById('r-anio').value=d.getFullYear();}
+function openNueva(r){
+  S.editId=r?r.id:null;document.getElementById('modal-r-title').textContent=r?'✏️ Editar Reserva':'🎂 Nueva Reserva — '+LOCAL_NAME;
+  document.getElementById('r-fecha').value=r&&r.fecha?isoDate(r.fecha):isoDate(new Date());
+  document.getElementById('r-tipo').value=(r&&r.tipo)||'cumple';document.getElementById('r-plan').value=(r&&r.plan)||'PM A';
+  document.getElementById('r-cumple').value=(r&&r.cumple)||'';document.getElementById('r-apoderado').value=(r&&r.apoderado)||'';
+  document.getElementById('r-fono').value=(r&&r.fono)||'';document.getElementById('r-inv').value=(r&&r.inv)||'';
+  document.getElementById('r-monto').value=(r&&r.monto)||'';document.getElementById('r-pagado').value=(r&&r.pagado)||'';
+  document.getElementById('r-banco').value=(r&&r.banco)||'';document.getElementById('r-boleta').value=(r&&r.boleta)||'';
+  document.getElementById('r-cobrador').value=(r&&r.cobrador)||'';document.getElementById('r-obs').value=(r&&r.obs)||'';
+  updateDia();document.getElementById('modal-reserva').classList.remove('hidden');
 }
-document.getElementById('r-fecha').addEventListener('change',updateDia);
-window.guardar=async function(){
-  const data={
-    fecha:new Date(document.getElementById('r-fecha').value+'T12:00:00'),
-    dia:document.getElementById('r-dia').value,
-    tipo:document.getElementById('r-tipo').value,
-    plan:document.getElementById('r-plan').value,
-    cumple:document.getElementById('r-cumple').value.trim(),
-    apoderado:document.getElementById('r-apoderado').value.trim(),
-    fono:document.getElementById('r-fono').value.trim(),
-    inv:document.getElementById('r-inv').value.trim(),
-    monto:Number(document.getElementById('r-monto').value)||0,
-    pagado:Number(document.getElementById('r-pagado').value)||0,
-    banco:document.getElementById('r-banco').value.trim(),
-    boleta:document.getElementById('r-boleta').value.trim(),
-    cobrador:document.getElementById('r-cobrador').value.trim(),
-    obs:document.getElementById('r-obs').value.trim(),
-    updatedAt:new Date(),
-  };
+function closeModal(){document.getElementById('modal-reserva').classList.add('hidden');S.editId=null;}
+function updateDia(){const f=document.getElementById('r-fecha').value;if(f){const d=new Date(f+'T12:00:00');document.getElementById('r-dia').value=DIAS_FULL[d.getDay()];document.getElementById('r-anio').value=d.getFullYear();}}
+
+async function guardar(){
+  const data={fecha:new Date(document.getElementById('r-fecha').value+'T12:00:00'),dia:document.getElementById('r-dia').value,tipo:document.getElementById('r-tipo').value,plan:document.getElementById('r-plan').value,cumple:document.getElementById('r-cumple').value.trim(),apoderado:document.getElementById('r-apoderado').value.trim(),fono:document.getElementById('r-fono').value.trim(),inv:document.getElementById('r-inv').value.trim(),monto:Number(document.getElementById('r-monto').value)||0,pagado:Number(document.getElementById('r-pagado').value)||0,banco:document.getElementById('r-banco').value.trim(),boleta:document.getElementById('r-boleta').value.trim(),cobrador:document.getElementById('r-cobrador').value.trim(),obs:document.getElementById('r-obs').value.trim()};
   if(!data.apoderado){alert('El apoderado es obligatorio');return;}
-  try{
-    if(S.editId&&useFirebase){await updateDoc(doc(db,COLLECTION,S.editId),data);const i=S.reservas.findIndex(r=>r.id===S.editId);if(i>=0)S.reservas[i]={...S.reservas[i],...data};}
-    else if(useFirebase){const ref=await addDoc(collection(db,COLLECTION),{...data,createdAt:new Date()});S.reservas.unshift({id:ref.id,...data});}
-    else if(S.editId){const i=S.reservas.findIndex(r=>r.id===S.editId);if(i>=0)S.reservas[i]={...S.reservas[i],...data};}
-    else{S.reservas.unshift({id:'new_'+Date.now(),...data});}
-  }catch(e){
-    if(S.editId){const i=S.reservas.findIndex(r=>r.id===S.editId);if(i>=0)S.reservas[i]={...S.reservas[i],...data};}
-    else S.reservas.unshift({id:'new_'+Date.now(),...data});
-  }
+  try{if(S.useFirebase){const fsD={...data,fecha:firebase.firestore.Timestamp.fromDate(data.fecha),updatedAt:firebase.firestore.FieldValue.serverTimestamp()};if(S.editId){await S.db.collection(COLLECTION).doc(S.editId).update(fsD);}else{const ref=await S.db.collection(COLLECTION).add({...fsD,createdAt:firebase.firestore.FieldValue.serverTimestamp()});data.id=ref.id;}}}catch(e){console.warn(e);}
+  if(S.editId){const i=S.reservas.findIndex(r=>r.id===S.editId);if(i>=0)S.reservas[i]={...S.reservas[i],...data};}else{data.id=data.id||'local_'+Date.now();S.reservas.unshift(data);}
   closeModal();populateAnios();renderAll();
-};
+}
 
-// ── VER / EDITAR / ELIMINAR ──
-window.verReserva=function(id){
-  const r=S.reservas.find(x=>x.id===id);if(!r)return;S.verId=id;
-  document.getElementById('ver-title').textContent=`${fmtF(r.fecha)} — ${r.cumple||r.apoderado||'Reserva'}`;
-  const p=pendiente(r);
-  document.getElementById('ver-body').innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-      <div><div class="form-section">Fecha y plan</div>
-        <p style="font-size:13px"><strong>${r.dia||''} ${fmtF(r.fecha)}</strong></p>
-        <p style="font-size:12px;color:var(--text-muted);margin-top:3px">${r.plan||''} · ${r.tipo||'cumple'}</p>
-      </div>
-      <div><div class="form-section">Cumpleañer@ / Apoderado</div>
-        <p style="font-size:15px;font-weight:800">${r.cumple||'–'}</p>
-        <p style="font-size:12px;margin-top:2px">👤 ${r.apoderado||'–'} · 📞 ${r.fono||'–'}</p>
-        ${r.inv?`<p style="margin-top:6px"><span class="inv-tag">🎨 ${r.inv}</span></p>`:''}
-      </div>
-    </div>
-    <div class="form-section">Pago</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
-      <div class="stat-card"><div class="label">Acordado</div><div class="value" style="font-size:18px">${fmtM(r.monto)}</div></div>
-      <div class="stat-card sky"><div class="label">Pagado</div><div class="value" style="font-size:18px">${fmtM(r.pagado)}</div></div>
-      <div class="stat-card ${p>0?'coral':'grass'}"><div class="label">${p>0?'Saldo pendiente':'✓ Al día'}</div><div class="value" style="font-size:18px">${p>0?fmtM(p):'$0'}</div></div>
-    </div>
-    <p style="font-size:12px;color:var(--text-muted)">Banco: <strong>${r.banco||'–'}</strong> · Boleta: <strong>${r.boleta?'#'+r.boleta:'–'}</strong> · Cobrador: <strong>${r.cobrador||'–'}</strong></p>
-    ${r.obs?`<div class="alert alert-warn" style="margin-top:12px">📝 ${r.obs}</div>`:''}`;
-  document.getElementById('btn-edit').onclick=()=>{closeVer();openNueva(r);};
-  document.getElementById('btn-del').onclick=()=>{closeVer();eliminarR(id);};
+function verReserva(id){
+  const r=S.reservas.find(x=>x.id===id);if(!r)return;
+  document.getElementById('ver-title').textContent=fmtF(r.fecha)+' — '+(r.cumple||r.apoderado||'Reserva');
+  const p=pend(r);
+  document.getElementById('ver-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px"><div><div class="form-section">Fecha y plan</div><p style="font-size:13px"><strong>'+(r.dia||'')+' '+fmtF(r.fecha)+'</strong></p><p style="font-size:12px;color:var(--text-muted);margin-top:3px">'+(r.plan||'')+' · '+(r.tipo||'')+'</p></div><div><div class="form-section">Cumpleañer@ / Apoderado</div><p style="font-size:15px;font-weight:800">'+(r.cumple||'–')+'</p><p style="font-size:12px;margin-top:2px">👤 '+(r.apoderado||'–')+' · 📞 '+(r.fono||'–')+'</p>'+(r.inv?'<p style="margin-top:6px"><span class="inv-tag">🎨 '+r.inv+'</span></p>':'')+'</div></div><div class="form-section">Pago</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"><div class="stat-card"><div class="label">Acordado</div><div class="value" style="font-size:18px">'+fmtM(r.monto)+'</div></div><div class="stat-card sky"><div class="label">Pagado</div><div class="value" style="font-size:18px">'+fmtM(r.pagado)+'</div></div><div class="stat-card '+(p>0?'coral':'grass')+'"><div class="label">'+(p>0?'Saldo pendiente':'✓ Al día')+'</div><div class="value" style="font-size:18px">'+(p>0?fmtM(p):'$0')+'</div></div></div><p style="font-size:12px;color:var(--text-muted)">Banco: <strong>'+(r.banco||'–')+'</strong> · Boleta: <strong>'+(r.boleta?'#'+r.boleta:'–')+'</strong> · Cobrador: <strong>'+(r.cobrador||'–')+'</strong></p>'+(r.obs?'<div class="alert alert-warn" style="margin-top:12px">📝 '+r.obs+'</div>':'');
+  document.getElementById('btn-edit').onclick=function(){closeVer();openNueva(r);};
+  document.getElementById('btn-del').onclick=function(){closeVer();eliminarR(id);};
   document.getElementById('modal-ver').classList.remove('hidden');
-};
-window.closeVer=function(){document.getElementById('modal-ver').classList.add('hidden');};
-window.editarR=function(id){const r=S.reservas.find(x=>x.id===id);if(r)openNueva(r);};
-window.eliminarR=async function(id){
-  if(!confirm('¿Eliminar esta reserva?'))return;
-  try{if(useFirebase)await deleteDoc(doc(db,COLLECTION,id));}catch(e){}
-  S.reservas=S.reservas.filter(r=>r.id!==id);
-  populateAnios();renderAll();
-};
+}
+function closeVer(){document.getElementById('modal-ver').classList.add('hidden');}
 
-// ── SHOW PANEL ──
-window.showPanel=function(name){
+async function eliminarR(id){
+  if(!confirm('¿Eliminar esta reserva?'))return;
+  try{if(S.useFirebase)await S.db.collection(COLLECTION).doc(id).delete();}catch(e){}
+  S.reservas=S.reservas.filter(r=>r.id!==id);populateAnios();renderAll();
+}
+
+function showPanel(name, btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
+  const el=document.getElementById('panel-'+name);
+  if(el)el.classList.add('active');
   const titles={dashboard:'Dashboard',calendario:'Calendario',seguimiento:'Seguimiento',pagos:'Pagos',importar:'Importar Excel',resumen:'Resumen'};
   document.getElementById('panel-title').textContent=titles[name]||name;
-  const navIdx={dashboard:0,calendario:1,seguimiento:3,pagos:4,importar:5,resumen:7};
-  document.querySelectorAll('.nav-item')[navIdx[name]||0]?.classList.add('active');
+  if(btn){btn.classList.add('active');}
+  else{const b=document.querySelector('[data-panel="'+name+'"]');if(b)b.classList.add('active');}
   if(name==='seguimiento')renderSeg();
   if(name==='pagos')renderPagos();
   if(name==='resumen')renderResumen();
   if(name==='importar')loadImportLog();
-};
+}
 
-// ── TOPBAR AÑO ──
-window.onAnioChange=function(){
-  S.anioFiltro=document.getElementById('topbar-anio').value;
-  renderAll();
-};
+function onAnioChange(){S.anioFiltro=document.getElementById('topbar-anio').value;if(S.anioFiltro){S.calY=Number(S.anioFiltro);S.calM=0;}renderAll();}
 
-// ── EXPORT CSV ──
-window.exportCSV=function(){
+function exportCSV(){
   let rs=S.anioFiltro?S.reservas.filter(r=>new Date(r.fecha).getFullYear()==S.anioFiltro):S.reservas;
   rs.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   const cols=['Fecha','Día','Plan','Tipo','Cumpleañer@','Apoderado','Teléfono','Monto','Pagado','Diferencia','Banco','Boleta','Invitación','Cobrador','Obs'];
-  const rows=rs.map(r=>[fmtF(r.fecha),r.dia||'',r.plan||'',r.tipo||'',r.cumple||'',r.apoderado||'',r.fono||'',r.monto||0,r.pagado||0,pendiente(r),r.banco||'',r.boleta||'',r.inv||'',r.cobrador||'',r.obs||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const rows=rs.map(r=>[fmtF(r.fecha),r.dia||'',r.plan||'',r.tipo||'',r.cumple||'',r.apoderado||'',r.fono||'',r.monto||0,r.pagado||0,pend(r),r.banco||'',r.boleta||'',r.inv||'',r.cobrador||'',r.obs||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
   const csv=[cols.join(','),...rows].join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
-  a.download=`yelou_reservas_${new Date().toISOString().split('T')[0]}.csv`;a.click();
-};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download=COLLECTION+'_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+}
 
-// ── INIT ──
+initFirebase();
 load();
+
 </script>
 </body>
 </html>
