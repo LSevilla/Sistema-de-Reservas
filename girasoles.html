@@ -720,12 +720,12 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 const FIREBASE_CONFIG = {
-  apiKey: "REEMPLAZA_AQUI",
-  authDomain: "REEMPLAZA_AQUI.firebaseapp.com",
-  projectId: "REEMPLAZA_AQUI",
-  storageBucket: "REEMPLAZA_AQUI.appspot.com",
-  messagingSenderId: "REEMPLAZA_AQUI",
-  appId: "REEMPLAZA_AQUI"
+  apiKey: "AIzaSyDb_BLFkqagKfzAm31aZZ4IzvdQRdKjSI0",
+  authDomain: "park-sistema.firebaseapp.com",
+  projectId: "park-sistema",
+  storageBucket: "park-sistema.firebasestorage.app",
+  messagingSenderId: "75939250853",
+  appId: "1:75939250853:web:733ed19e5bfde0aea0434c"
 };
 const COLLECTION = "girasoles_reservas";
 const LOCAL_PREFIX = "G";
@@ -933,7 +933,7 @@ function handleFile(file){
   reader.onload=function(e){
     try{
       const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});window._wb=wb;
-      const matching=wb.SheetNames.filter(n=>n.trim().toUpperCase().startsWith(LOCAL_PREFIX)||n.trim().toUpperCase().replace(/\s+/g,'').startsWith(LOCAL_PREFIX));
+      const matching=wb.SheetNames.filter(n=>{const t=n.trim().toUpperCase().replace(/\s+/g,'');return !n.includes('INSTRUCCIONES')&&!n.includes('📋')&&(t.startsWith(LOCAL_PREFIX));});
       document.getElementById('sheet-tab-list').innerHTML=wb.SheetNames.map(s=>'<span class="sheet-tab'+(matching.includes(s)?' active':'')+'" onclick="toggleSheet(this)" data-sheet="'+s+'">'+s+'</span>').join('');
       document.getElementById('sheet-tabs').style.display='';
       const info=document.getElementById('import-match-info');info.style.display='';
@@ -1040,7 +1040,10 @@ function clearImport(){S.importRows=[];['import-preview','sheet-tabs'].forEach(i
 async function confirmarImport(){
   const rows=S.importRows;if(!rows.length)return;
   if(!confirm('¿Importar '+rows.length+' registros a '+LOCAL_NAME+'? Los duplicados se omitirán.'))return;
-  const existKeys=new Set(S.reservas.map(r=>isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()));
+  // Solo filtrar duplicados si hay datos REALES de Firebase (no demo generado)
+  const existKeys = S.useFirebase
+    ? new Set(S.reservas.map(r=>isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()))
+    : new Set(); // en modo demo/local no filtrar
   const nuevos=rows.filter(r=>!existKeys.has(isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()));
   const dupes=rows.length-nuevos.length;
   document.getElementById('import-progress').style.display='';document.getElementById('import-preview').style.display='none';
@@ -1053,7 +1056,14 @@ async function confirmarImport(){
       document.getElementById('progress-bar').style.width=pct+'%';document.getElementById('progress-label').textContent=importados+' / '+total+' ('+pct+'%)';
     }
     await load();
-  }else{nuevos.forEach(r=>{S.reservas.push({id:'imp_'+Date.now()+'_'+Math.random(),...r});});importados=nuevos.length;document.getElementById('progress-bar').style.width='100%';document.getElementById('progress-label').textContent=importados+' / '+total;}
+  }else{
+    // Modo sin Firebase: reemplazar datos demo con los datos importados
+    S.reservas = S.reservas.filter(r => !r.id.startsWith('demo_') && !r.id.startsWith('hoy'));
+    nuevos.forEach(r=>{S.reservas.unshift({id:'imp_'+Date.now()+'_'+Math.random(),...r});});
+    importados=nuevos.length;
+    document.getElementById('progress-bar').style.width='100%';
+    document.getElementById('progress-label').textContent=importados+' / '+total;
+  }
   const log={fecha:new Date(),total:rows.length,importados:nuevos.length,dupes};S.importLogs.unshift(log);
   try{localStorage.setItem(COLLECTION+'_logs',JSON.stringify(S.importLogs.slice(0,10)));}catch(e){}
   setTimeout(()=>{document.getElementById('import-progress').style.display='none';document.getElementById('import-status').innerHTML='<div class="alert alert-success">✅ '+importados+' registros importados'+(dupes>0?' · '+dupes+' duplicados omitidos':'')+'.</div>';clearImport();populateAnios();renderAll();loadImportLog();},600);
