@@ -145,7 +145,7 @@ textarea { resize: vertical; min-height: 60px; }
 .cal-day { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px; }
 .cal-cell.today .cal-day { color: var(--primary-dark); }
 .cal-ev { font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; background: var(--primary-light); color: var(--primary-dark); }
-.cal-ev.paseo { background: var(--grass-light); color: #1E5C22; }
+
 
 /* ── IMPORT ── */
 .import-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg); }
@@ -279,7 +279,7 @@ tbody tr.selected{background:var(--coral-light) !important}
     </button>
   </nav>
   <div class="sidebar-footer">
-    Yelou · Sistema de Reservas v2.2
+    Yelou · Sistema de Reservas v2.3
   </div>
 </div>
 
@@ -391,7 +391,7 @@ tbody tr.selected{background:var(--coral-light) !important}
         <option value="paseo">Paseo de curso</option>
       </select>
     </div>
-    <div class="stats-grid" id="pagos-resumen-stats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div class="stats-grid" id="pagos-stats" style="grid-template-columns:repeat(4,1fr)"></div>
     <div class="card">
       <div class="card-header">
         <div class="card-title">💳 Registro de pagos</div>
@@ -440,7 +440,7 @@ tbody tr.selected{background:var(--coral-light) !important}
             <div style="font-size:12px;font-weight:700">Vista previa — <span id="preview-count">0</span> registros detectados</div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-outline btn-sm" onclick="clearImport()">✕ Limpiar</button>
-              <button class="btn btn-primary" id="btn-confirmar-import" onclick="confirmarImport()">✅ Importar todos los registros</button>
+              <button class="btn btn-primary" id="btn-import" onclick="confirmarImport()">✅ Importar todos los registros</button>
             </div>
           </div>
           <div class="import-table-wrap">
@@ -498,6 +498,49 @@ tbody tr.selected{background:var(--coral-light) !important}
   </div>
 </div>
 
+
+<!-- MODAL NUEVO PAGO -->
+<div class="modal-overlay hidden" id="modal-pago">
+  <div class="modal">
+    <div class="modal-header" style="background:var(--grass)">
+      <span class="modal-title" id="modal-p-title">💳 Registrar Pago</span>
+      <button class="modal-close" onclick="closePago()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert-warn alert" id="pago-reserva-info" style="margin-bottom:14px">Selecciona la reserva o ingresa los datos manualmente.</div>
+      <div class="form-section">Buscar reserva existente</div>
+      <div class="form-grid cols1" style="margin-bottom:14px">
+        <div class="field">
+          <label>Buscar por apoderado o cumpleañer@</label>
+          <input type="text" id="pago-buscar" placeholder="Escribe para buscar..." oninput="buscarParaPago()" autocomplete="off">
+          <div id="pago-sugerencias" style="display:none;border:1.5px solid var(--border);border-radius:7px;max-height:160px;overflow-y:auto;margin-top:4px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.08)"></div>
+        </div>
+      </div>
+      <div class="form-section">Datos de la reserva</div>
+      <div class="form-grid">
+        <div class="field"><label>Fecha reserva</label><input type="text" id="p-fecha-res" readonly placeholder="(de la reserva)"></div>
+        <div class="field"><label>Cumpleañer@ / Apoderado</label><input type="text" id="p-nombre" placeholder="Nombre"></div>
+        <div class="field"><label>Plan</label><input type="text" id="p-plan" placeholder="PM A, AM B..."></div>
+        <div class="field"><label>Monto total acordado (CLP)</label><input type="number" id="p-monto" placeholder="280000" step="1000" oninput="calcDiffPago()"></div>
+      </div>
+      <div class="form-section">Pago recibido</div>
+      <div class="form-grid cols3">
+        <div class="field"><label>Monto pagado (CLP) *</label><input type="number" id="p-pagado" placeholder="280000" step="1000" oninput="calcDiffPago()"></div>
+        <div class="field"><label>Banco / Medio *</label><input type="text" id="p-banco" placeholder="Santander 15/6"></div>
+        <div class="field"><label>Boleta N°</label><input type="text" id="p-boleta"></div>
+        <div class="field"><label>Cobrado por</label><input type="text" id="p-cobrador" placeholder="Claudia / Leray..."></div>
+        <div class="field"><label>Fecha de pago</label><input type="date" id="p-fecha-pago"></div>
+      </div>
+      <div id="pago-diff-info" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:4px"></div>
+      <div class="form-section" style="margin-top:12px">Observaciones</div>
+      <div class="form-grid cols1"><div class="field"><textarea id="p-obs" placeholder="Abono parcial, cambio de plan..." style="min-height:70px"></textarea></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePago()">Cancelar</button>
+      <button class="btn btn-grass" onclick="guardarPago()">💳 Guardar pago</button>
+    </div>
+  </div>
+</div>
 <!-- MODAL RESERVA -->
 <div class="modal-overlay hidden" id="modal-reserva">
   <div class="modal">
@@ -896,6 +939,7 @@ function verReserva(id){
   document.getElementById('ver-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px"><div><div class="form-section">Fecha y plan</div><p style="font-size:13px"><strong>'+(r.dia||'')+' '+fmtF(r.fecha)+'</strong></p><p style="font-size:12px;color:var(--text-muted);margin-top:3px">'+(r.plan||'')+' · '+(r.tipo||'')+'</p></div><div><div class="form-section">Cumpleañer@ / Apoderado</div><p style="font-size:15px;font-weight:800">'+(r.cumple||'–')+'</p><p style="font-size:12px;margin-top:2px">👤 '+(r.apoderado||'–')+' · 📞 '+(r.fono||'–')+'</p>'+(r.inv?'<p style="margin-top:6px"><span class="inv-tag">🎨 '+r.inv+'</span></p>':'')+'</div></div><div class="form-section">Pago</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"><div class="stat-card"><div class="label">Acordado</div><div class="value" style="font-size:18px">'+fmtM(r.monto)+'</div></div><div class="stat-card sky"><div class="label">Pagado</div><div class="value" style="font-size:18px">'+fmtM(r.pagado)+'</div></div><div class="stat-card '+(p>0?'coral':'grass')+'"><div class="label">'+(p>0?'Saldo pendiente':'✓ Al día')+'</div><div class="value" style="font-size:18px">'+(p>0?fmtM(p):'$0')+'</div></div></div><p style="font-size:12px;color:var(--text-muted)">Banco: <strong>'+(r.banco||'–')+'</strong> · Boleta: <strong>'+(r.boleta?'#'+r.boleta:'–')+'</strong> · Cobrador: <strong>'+(r.cobrador||'–')+'</strong></p>'+(r.obs?'<div class="alert alert-warn" style="margin-top:12px">📝 '+r.obs+'</div>':'');
   document.getElementById('btn-edit').onclick=function(){closeVer();openNueva(r);};
   document.getElementById('btn-del').onclick=function(){closeVer();eliminarR(id);};
+  var bp=document.getElementById('btn-pago');if(bp)bp.onclick=function(){closeVer();openNuevoPago(id);};
   document.getElementById('modal-ver').classList.remove('hidden');
 }
 function closeVer(){document.getElementById('modal-ver').classList.add('hidden');}
@@ -1015,6 +1059,107 @@ function irAPagoDesdeReserva() {
   const apoderado = document.getElementById('r-apoderado').value.trim();
   if (!apoderado) { alert('Completa al menos el nombre del Apoderado antes de ir a Pagos.'); return; }
   guardar().then(function() { closeModal(); setTimeout(function() { if (S.reservas.length > 0) openNuevoPago(S.reservas[0].id); else openNuevoPago(); }, 300); }).catch(function() { closeModal(); openNuevoPago(); });
+}
+
+
+let pagoReservaId = null;
+function openNuevoPago(reservaId) {
+  pagoReservaId = reservaId || null;
+  document.getElementById('p-fecha-pago').value = isoDate(new Date());
+  document.getElementById('pago-buscar').value = '';
+  document.getElementById('pago-sugerencias').style.display = 'none';
+  document.getElementById('pago-diff-info').style.display = 'none';
+  ['p-fecha-res','p-nombre','p-plan','p-monto','p-pagado','p-banco','p-boleta','p-cobrador','p-obs'].forEach(function(id){
+    var el=document.getElementById(id); if(el)el.value='';
+  });
+  if (reservaId) {
+    var r = S.reservas.find(function(x){return x.id===reservaId;});
+    if (r) fillPagoFromReserva(r);
+  } else {
+    document.getElementById('pago-reserva-info').textContent='Busca una reserva existente o ingresa los datos manualmente.';
+  }
+  document.getElementById('modal-pago').classList.remove('hidden');
+}
+function fillPagoFromReserva(r) {
+  pagoReservaId = r.id;
+  document.getElementById('p-fecha-res').value = fmtF(r.fecha);
+  document.getElementById('p-nombre').value = (r.cumple ? r.cumple+' — ':'' ) + (r.apoderado||'');
+  document.getElementById('p-plan').value = r.plan||'';
+  document.getElementById('p-monto').value = r.monto||'';
+  var saldo = pend(r);
+  document.getElementById('p-pagado').value = saldo > 0 ? saldo : (r.monto||'');
+  document.getElementById('p-cobrador').value = r.cobrador||'';
+  var info = document.getElementById('pago-reserva-info');
+  if (saldo > 0) {
+    info.className='alert alert-warn';
+    info.innerHTML='⚠️ Saldo pendiente: <strong>'+fmtM(saldo)+'</strong> de '+fmtM(r.monto);
+  } else {
+    info.className='alert alert-success';
+    info.innerHTML='✅ Esta reserva ya está pagada ('+fmtM(r.monto)+')';
+  }
+  document.getElementById('pago-sugerencias').style.display='none';
+  calcDiffPago();
+}
+function buscarParaPago() {
+  var q=(document.getElementById('pago-buscar').value||'').toLowerCase().trim();
+  var sug=document.getElementById('pago-sugerencias');
+  if(q.length<2){sug.style.display='none';return;}
+  var matches=S.reservas.filter(function(r){return(r.cumple||'').toLowerCase().includes(q)||(r.apoderado||'').toLowerCase().includes(q);}).slice(0,8);
+  if(!matches.length){sug.style.display='none';return;}
+  sug.style.display='';
+  sug.innerHTML=matches.map(function(r){
+    var s=pend(r);
+    return '<div class="pago-sug-item" data-rid="'+r.id+'">'+
+      '<strong>'+(r.cumple||'(sin nombre)')+'</strong> — '+(r.apoderado||'')+
+      ' <span style="color:var(--text-muted);font-size:10px">'+fmtF(r.fecha)+' · '+(r.plan||'')+'</span>'+
+      (s>0?' <span style="color:var(--coral);font-size:10px;font-weight:700">Saldo: '+fmtM(s)+'</span>':' <span style="color:var(--grass);font-size:10px">✓ Pagado</span>')+
+      '</div>';
+  }).join('');
+  sug.querySelectorAll('.pago-sug-item').forEach(function(el){
+    el.addEventListener('click',function(){
+      var rid=el.dataset.rid;
+      var r=S.reservas.find(function(x){return x.id===rid;});
+      if(r)fillPagoFromReserva(r);
+    });
+  });
+}
+function calcDiffPago() {
+  var monto=Number(document.getElementById('p-monto').value)||0;
+  var pagado=Number(document.getElementById('p-pagado').value)||0;
+  var el=document.getElementById('pago-diff-info');
+  if(!monto||!pagado){el.style.display='none';return;}
+  var diff=monto-pagado;
+  el.style.display='';
+  if(diff>0){el.style.background='var(--coral-light)';el.style.color='var(--coral)';el.innerHTML='⚠️ Quedaría saldo pendiente de <strong>'+fmtM(diff)+'</strong>';}
+  else if(diff===0){el.style.background='var(--grass-light)';el.style.color='var(--grass)';el.innerHTML='✅ Pago completo';}
+  else{el.style.background='var(--sky-light)';el.style.color='var(--sky)';el.innerHTML='ℹ️ El pago supera el monto en <strong>'+fmtM(Math.abs(diff))+'</strong>';}
+}
+async function guardarPago() {
+  var pagado=Number(document.getElementById('p-pagado').value)||0;
+  var banco=document.getElementById('p-banco').value.trim();
+  if(!pagado){alert('Ingresa el monto pagado');return;}
+  if(!banco){alert('Ingresa el banco o medio de pago');return;}
+  if(pagoReservaId){
+    var r=S.reservas.find(function(x){return x.id===pagoReservaId;});
+    if(r){
+      var nuevoPagado=(Number(r.pagado)||0)+pagado;
+      var updates={pagado:nuevoPagado,banco:banco,boleta:document.getElementById('p-boleta').value.trim()||r.boleta||'',cobrador:document.getElementById('p-cobrador').value.trim()||r.cobrador||'',obs:[r.obs,document.getElementById('p-obs').value.trim()].filter(Boolean).join(' | ')};
+      if(S.useFirebase){try{await S.db.collection(COLLECTION).doc(pagoReservaId).update(updates);}catch(e){console.warn(e);}}
+      Object.assign(r,updates);
+    }
+  } else {
+    var data={fecha:new Date(document.getElementById('p-fecha-pago').value+'T12:00:00'),cumple:'',apoderado:document.getElementById('p-nombre').value.trim(),plan:document.getElementById('p-plan').value.trim(),tipo:'pago',monto:Number(document.getElementById('p-monto').value)||pagado,pagado:pagado,banco:banco,boleta:document.getElementById('p-boleta').value.trim(),cobrador:document.getElementById('p-cobrador').value.trim(),obs:document.getElementById('p-obs').value.trim(),dia:''};
+    if(S.useFirebase){try{var ref=await S.db.collection(COLLECTION).add({...data,fecha:firebase.firestore.Timestamp.fromDate(data.fecha),createdAt:firebase.firestore.FieldValue.serverTimestamp()});data.id=ref.id;}catch(e){data.id='pago_'+Date.now();}}
+    else{data.id='pago_'+Date.now();}
+    S.reservas.unshift(data);
+  }
+  closePago();populateAnios();renderAll();
+}
+function closePago(){document.getElementById('modal-pago').classList.add('hidden');pagoReservaId=null;}
+function irAPagoDesdeReserva(){
+  var apoderado=document.getElementById('r-apoderado').value.trim();
+  if(!apoderado){alert('Completa al menos el nombre del Apoderado antes de ir a Pagos.');return;}
+  guardar().then(function(){closeModal();setTimeout(function(){if(S.reservas.length>0)openNuevoPago(S.reservas[0].id);else openNuevoPago();},300);}).catch(function(){closeModal();openNuevoPago();});
 }
 
 initFirebase();
