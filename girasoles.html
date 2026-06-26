@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Girasoles Park — Sistema de Reservas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   --primary: #3B8040;
@@ -93,7 +94,6 @@ table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 thead th { background: var(--bg); color: var(--text-muted); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); }
 tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
 tbody tr:hover { background: #fafafa; }
-tbody tr[ondblclick]:hover { background: var(--primary-light); }
 tbody td { padding: 8px 10px; vertical-align: middle; }
 tbody tr:last-child { border-bottom: none; }
 
@@ -144,20 +144,8 @@ textarea { resize: vertical; min-height: 60px; }
 .cal-cell.other-month .cal-day { color: #ccc; }
 .cal-day { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px; }
 .cal-cell.today .cal-day { color: var(--primary-dark); }
-.cal-ev { font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; position: relative; }
-/* AM = Mañana → azul */
-.cal-ev.am-a  { background: #DBEAFE; color: #1E40AF; border-left: 3px solid #3B82F6; }
-.cal-ev.am-b  { background: #BFDBFE; color: #1E3A8A; border-left: 3px solid #1D4ED8; }
-/* PM = Tarde → naranja/ámbar */
-.cal-ev.pm-a  { background: #FEF3C7; color: #92400E; border-left: 3px solid #F59E0B; }
-.cal-ev.pm-b  { background: #FDE68A; color: #78350F; border-left: 3px solid #D97706; }
-/* Paseo = día completo → verde */
-.cal-ev.paseo { background: #D1FAE5; color: #065F46; border-left: 3px solid #10B981; }
-/* Otro / sin clasificar */
-.cal-ev.otro  { background: #F3F4F6; color: #4B5563; border-left: 3px solid #9CA3AF; }
-/* Celda hoy */
-.cal-cell.today { background: #FFFDE6; }
-.cal-cell.today .cal-day { color: var(--primary-dark); font-weight: 800; }
+.cal-ev { font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; background: var(--primary-light); color: var(--primary-dark); }
+.cal-ev.paseo { background: var(--grass-light); color: #1E5C22; }
 
 /* ── IMPORT ── */
 .import-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg); }
@@ -202,17 +190,31 @@ textarea { resize: vertical; min-height: 60px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-.nav-action { display:flex;align-items:center;gap:8px;padding:8px 14px;margin:3px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;width:calc(100% - 20px);text-align:left;transition:all 0.15s; }
-.nav-action.primary { background:var(--primary);color:var(--primary-text); }
-.nav-action.primary:hover { background:var(--primary-dark);color:var(--primary-text); }
-.nav-action.secondary { background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.12); }
-.nav-action.secondary:hover { background:rgba(255,255,255,0.12);color:#fff; }
-.nav-action svg { width:14px;height:14px;flex-shrink:0; }
-.nav-action-pago { display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.12);transition:all 0.15s;width:100%; }
-.nav-action-pago:hover { background:rgba(255,255,255,0.15);color:#fff; }
-.pago-sug-item { padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;transition:background 0.1s; }
-.pago-sug-item:hover { background:var(--primary-light); }
-.pago-sug-item:last-child { border-bottom:none; }
+.nav-action{display:flex;align-items:center;gap:8px;padding:8px 14px;margin:3px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;width:calc(100% - 20px);text-align:left;transition:all 0.15s}
+.nav-action.primary{background:var(--primary);color:var(--primary-text)}
+.nav-action.primary:hover{background:var(--primary-dark);color:var(--primary-text)}
+.nav-action.secondary{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.12)}
+.nav-action.secondary:hover{background:rgba(255,255,255,0.12);color:#fff}
+.nav-action svg{width:14px;height:14px;flex-shrink:0}
+.pago-sug-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;transition:background 0.1s}
+.pago-sug-item:hover{background:var(--primary-light)}
+.pago-sug-item:last-child{border-bottom:none}
+.cal-ev{font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;position:relative}
+.cal-ev.am-a{background:#DBEAFE;color:#1E40AF;border-left:3px solid #3B82F6}
+.cal-ev.am-b{background:#BFDBFE;color:#1E3A8A;border-left:3px solid #1D4ED8}
+.cal-ev.pm-a{background:#FEF3C7;color:#92400E;border-left:3px solid #F59E0B}
+.cal-ev.pm-b{background:#FDE68A;color:#78350F;border-left:3px solid #D97706}
+.cal-ev.paseo{background:#D1FAE5;color:#065F46;border-left:3px solid #10B981}
+.cal-ev.otro{background:#F3F4F6;color:#4B5563;border-left:3px solid #9CA3AF}
+.seg-check{width:15px;height:15px;cursor:pointer;accent-color:var(--primary)}
+.bulk-bar{display:none;align-items:center;gap:10px;padding:8px 14px;background:var(--coral-light);border:1px solid #F5C4B3;border-radius:8px;margin-bottom:10px;font-size:12.5px}
+.bulk-bar.visible{display:flex}
+.bulk-count{font-weight:700;color:var(--coral)}
+.bulk-spacer{flex:1}
+thead th.th-check{width:36px;text-align:center;padding:8px 6px}
+tbody td.td-check{text-align:center;padding:8px 6px}
+tbody tr.selected{background:var(--coral-light) !important}
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -240,11 +242,11 @@ textarea { resize: vertical; min-height: 60px; }
   </div>
   <nav>
     <div class="nav-section">Principal</div>
-    <button class="nav-item active" data-panel="dashboard" onclick="showPanel('dashboard', this)">
+    <button class="nav-item active" onclick="showPanel('dashboard')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Dashboard
     </button>
-    <button class="nav-item" data-panel="calendario" onclick="showPanel('calendario', this)">
+    <button class="nav-item" onclick="showPanel('calendario')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Calendario
     </button>
@@ -253,29 +255,20 @@ textarea { resize: vertical; min-height: 60px; }
       <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Nueva Reserva
     </button>
-    <button class="nav-action secondary" onclick="openNuevoPago()" style="margin-top:3px">
-      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="8" y1="15" x2="13" y2="15"/><line x1="16" y1="15" x2="18" y2="15"/></svg>
-      Nuevo Pago
-    </button>
-    <button class="nav-item" data-panel="seguimiento" onclick="showPanel('seguimiento', this)">
+    <button class="nav-item" onclick="showPanel('seguimiento')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       Seguimiento
     </button>
-    <button class="nav-item" data-panel="pagos" onclick="showPanel('pagos', this)">
+    <button class="nav-item" onclick="showPanel('pagos')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
       Pagos
     </button>
-    <button class="nav-action secondary" onclick="showPanel('importar', document.querySelector('[data-panel=importar]'))" style="margin-top:2px">
+    <button class="nav-item" onclick="showPanel('importar')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Importar Excel
     </button>
-    <button class="nav-item" data-panel="importar" onclick="showPanel('importar', this)" style="display:none"><!-- hidden anchor for active state --></button>
-    <button class="nav-action secondary" onclick="exportCSV()" style="margin-top:2px">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Exportar CSV
-    </button>
     <div class="nav-section">Análisis</div>
-    <button class="nav-item" data-panel="resumen" onclick="showPanel('resumen', this)">
+    <button class="nav-item" onclick="showPanel('resumen')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Resumen
     </button>
@@ -293,9 +286,11 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="topbar-title" id="panel-title">Dashboard</div>
     </div>
     <div class="topbar-actions">
-      <select id="topbar-anio" onchange="onAnioChange()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;background:#fff;cursor:pointer">
+      <select id="topbar-anio" onchange="onAnioChange()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;background:#fff">
         <option value="">Todos los años</option>
       </select>
+      
+      
     </div>
   </div>
 
@@ -329,13 +324,9 @@ textarea { resize: vertical; min-height: 60px; }
       <button class="cal-btn" onclick="calNav(1)">›</button>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;font-size:10.5px;color:var(--text-muted);align-items:center">
-      <span style="font-weight:700;color:var(--navy);margin-right:2px">Leyenda:</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#DBEAFE;border-radius:2px;border-left:3px solid #3B82F6;display:inline-block"></span>AM — A (Normal mañana)</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#BFDBFE;border-radius:2px;border-left:3px solid #1D4ED8;display:inline-block"></span>AM — B (Grande mañana)</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#FEF3C7;border-radius:2px;border-left:3px solid #F59E0B;display:inline-block"></span>PM — A (Normal tarde)</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#FDE68A;border-radius:2px;border-left:3px solid #D97706;display:inline-block"></span>PM — B (Grande tarde)</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#D1FAE5;border-radius:2px;border-left:3px solid #10B981;display:inline-block"></span>Paseo (día completo)</span>
+    <div style="margin-top:10px;display:flex;gap:14px;font-size:11px;color:var(--text-muted)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--primary-light);border-radius:2px;border:1px solid var(--primary-dark);display:inline-block"></span>Cumpleaños</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--grass-light);border-radius:2px;border:1px solid var(--grass);display:inline-block"></span>Paseo de curso</span>
     </div>
   </div>
 
@@ -357,13 +348,23 @@ textarea { resize: vertical; min-height: 60px; }
       <input type="text" id="f-buscar" placeholder="🔍 Buscar nombre, apoderado…" oninput="renderSeg()" style="max-width:220px">
     </div>
     <div class="card">
+      <div id="bulk-bar" class="bulk-bar">
+        <span class="bulk-count"><span id="bulk-n">0</span> seleccionados</span>
+        <span class="bulk-spacer"></span>
+        <button class="btn btn-outline btn-sm" onclick="deselectAll()">✕ Deseleccionar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarSeleccionados()">🗑️ Eliminar seleccionados</button>
+      </div>
       <div class="card-header">
         <div class="card-title">📋 Seguimiento <span id="seg-count" class="badge badge-gray" style="margin-left:6px">0</span></div>
-        <span id="seg-monto-total" style="font-size:12px;color:var(--text-muted)"></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="seg-total-monto" style="font-size:12px;color:var(--text-muted)"></span>
+          <button class="btn btn-outline btn-sm" id="btn-sel-all" onclick="toggleSelectAll()">☐ Seleccionar todo</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
           <thead><tr>
+            <th class="th-check"><input type="checkbox" id="check-all" class="seg-check" onchange="onCheckAll(this)"></th>
             <th>Fecha</th><th>Día</th><th>Tipo / Plan</th><th>Cumpleañer@</th><th>Apoderado</th>
             <th>Teléfono</th><th>Monto</th><th>Pagado</th><th>Banco / Pago</th>
             <th>Boleta</th><th>Invitación</th><th>Cobrador</th><th>Obs.</th><th></th>
@@ -385,7 +386,7 @@ textarea { resize: vertical; min-height: 60px; }
         <option value="paseo">Paseo de curso</option>
       </select>
     </div>
-    <div class="stats-grid" id="pagos-stats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div class="stats-grid" id="pagos-resumen-stats" style="grid-template-columns:repeat(4,1fr)"></div>
     <div class="card">
       <div class="card-header">
         <div class="card-title">💳 Registro de pagos</div>
@@ -408,101 +409,7 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="card-title">📂 Importar datos históricos desde Excel</div>
       </div>
       <div class="card-body">
-        <div class="alert alert-warn" style="align-items:flex-start;flex-direction:column;gap:6px">
-          <div>⚠️ El importador lee el formato histórico de tus planillas (<strong>G 2021, G 2022, Y 2023…</strong>). Antes de importar revisa la vista previa. Los duplicados (misma fecha + apoderado) se omiten automáticamente.</div>
-        </div>
-        
-        <!-- Tabla de columnas requeridas -->
-        <div style="margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">📋 Estructura esperada del Excel</div>
-          <div style="overflow-x:auto;border:1px solid var(--border);border-radius:8px">
-            <table style="width:100%;font-size:11px;border-collapse:collapse">
-              <thead>
-                <tr style="background:var(--bg)">
-                  <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700;white-space:nowrap">Columna Excel</th>
-                  <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700">Nombres aceptados</th>
-                  <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700">Ejemplo</th>
-                  <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700">Obligatorio</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style="border-bottom:1px solid var(--border)">
-                  <td style="padding:6px 10px;font-weight:700">📅 Fecha</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>FECHA</code></td>
-                  <td style="padding:6px 10px">2025-06-15 / 15/06/2025</td>
-                  <td style="padding:6px 10px;text-align:center"><span style="color:var(--coral);font-weight:700">✱ Sí</span></td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
-                  <td style="padding:6px 10px;font-weight:700">📅 Día</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>DIA</code></td>
-                  <td style="padding:6px 10px">SABADO / VIERNES</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border)">
-                  <td style="padding:6px 10px;font-weight:700">⏰ Horario / Plan</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>HORARIO/TIPO</code> · <code>TIPO Y HORARIO</code></td>
-                  <td style="padding:6px 10px">AM A · PM B · PASEO PM</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
-                  <td style="padding:6px 10px;font-weight:700">🎂 Cumpleañer@</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>CUMPLEAÑERO</code> · <code>CUMPLEAÑER@</code></td>
-                  <td style="padding:6px 10px">Sofía / Martín</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border)">
-                  <td style="padding:6px 10px;font-weight:700">👤 Apoderado</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>APODERADO</code> · <code>MAMA/PAPA</code></td>
-                  <td style="padding:6px 10px">Carolina García</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
-                  <td style="padding:6px 10px;font-weight:700">📞 Teléfono</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>FONO</code> · <code>TELEFONO</code></td>
-                  <td style="padding:6px 10px">987654321</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border)">
-                  <td style="padding:6px 10px;font-weight:700">💰 Monto</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>MONTO</code> · <code>PAGO</code></td>
-                  <td style="padding:6px 10px">280000</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
-                  <td style="padding:6px 10px;font-weight:700">🏦 Banco / Pago</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>BANCO</code> · <code>DETALLE</code></td>
-                  <td style="padding:6px 10px">Santander 15/6</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border)">
-                  <td style="padding:6px 10px;font-weight:700">🧾 Boleta</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>BOLETA</code></td>
-                  <td style="padding:6px 10px">42 / X</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
-                  <td style="padding:6px 10px;font-weight:700">🎨 Invitación</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>INVITACION</code> · <code>INV</code></td>
-                  <td style="padding:6px 10px">Frozen / Paw Patrol</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr style="border-bottom:1px solid var(--border)">
-                  <td style="padding:6px 10px;font-weight:700">👩 Cobrador</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>A:</code> · <code>COBRADOR</code></td>
-                  <td style="padding:6px 10px">Claudia / Leray</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 10px;font-weight:700">📝 Observaciones</td>
-                  <td style="padding:6px 10px;color:var(--text-muted)"><code>OBSERVACIONES</code> · <code>OBSERV</code></td>
-                  <td style="padding:6px 10px">No se celebró / Abono</td>
-                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:6px">💡 El importador detecta automáticamente la fila de encabezados. El nombre de las hojas debe comenzar con <strong>G</strong> para Girasoles o <strong>Y</strong> para Yelou (ej: G 2024, G2025, Y 2023).</div>
-        </div>
+        <div class="alert alert-warn">⚠️ El importador lee el formato histórico de tus planillas (G 2021, G 2022, Y 2023…). Antes de importar, revisa la vista previa. Los registros duplicados (misma fecha + apoderado) se omiten automáticamente.</div>
         
         <!-- Zona de arrastre -->
         <div class="import-zone" id="import-zone" onclick="document.getElementById('file-input').click()">
@@ -528,7 +435,7 @@ textarea { resize: vertical; min-height: 60px; }
             <div style="font-size:12px;font-weight:700">Vista previa — <span id="preview-count">0</span> registros detectados</div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-outline btn-sm" onclick="clearImport()">✕ Limpiar</button>
-              <button class="btn btn-primary" id="btn-import" onclick="confirmarImport()">✅ Importar todos los registros</button>
+              <button class="btn btn-primary" id="btn-confirmar-import" onclick="confirmarImport()">✅ Importar todos los registros</button>
             </div>
           </div>
           <div class="import-table-wrap">
@@ -586,52 +493,6 @@ textarea { resize: vertical; min-height: 60px; }
   </div>
 </div>
 
-
-<!-- MODAL NUEVO PAGO -->
-<div class="modal-overlay hidden" id="modal-pago">
-  <div class="modal">
-    <div class="modal-header" style="background:var(--grass)">
-      <span class="modal-title" id="modal-p-title">💳 Registrar Pago</span>
-      <button class="modal-close" onclick="closePago()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="alert alert-warn" id="pago-reserva-info" style="margin-bottom:14px">
-        Selecciona la reserva o ingresa los datos manualmente.
-      </div>
-      <div class="form-section">Buscar reserva existente</div>
-      <div class="form-grid cols1" style="margin-bottom:14px">
-        <div class="field">
-          <label>Buscar por apoderado o cumpleañer@</label>
-          <input type="text" id="pago-buscar" placeholder="Escribe para buscar..." oninput="buscarParaPago()" autocomplete="off">
-          <div id="pago-sugerencias" style="display:none;border:1.5px solid var(--border);border-radius:7px;max-height:160px;overflow-y:auto;margin-top:4px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.08)"></div>
-        </div>
-      </div>
-      <div class="form-section">Datos de la reserva</div>
-      <div class="form-grid">
-        <div class="field"><label>Fecha reserva</label><input type="text" id="p-fecha-res" readonly placeholder="(de la reserva)"></div>
-        <div class="field"><label>Cumpleañer@ / Apoderado</label><input type="text" id="p-nombre" placeholder="Nombre"></div>
-        <div class="field"><label>Plan</label><input type="text" id="p-plan" placeholder="PM A, AM B..."></div>
-        <div class="field"><label>Monto total acordado (CLP)</label><input type="number" id="p-monto" placeholder="280000" step="1000" oninput="calcDiffPago()"></div>
-      </div>
-      <div class="form-section">Pago recibido</div>
-      <div class="form-grid cols3">
-        <div class="field"><label>Monto pagado (CLP) *</label><input type="number" id="p-pagado" placeholder="280000" step="1000" oninput="calcDiffPago()"></div>
-        <div class="field"><label>Banco / Medio *</label><input type="text" id="p-banco" placeholder="Santander 15/6"></div>
-        <div class="field"><label>Boleta N°</label><input type="text" id="p-boleta"></div>
-        <div class="field"><label>Cobrado por</label><input type="text" id="p-cobrador" placeholder="Claudia / Leray..."></div>
-        <div class="field"><label>Fecha de pago</label><input type="date" id="p-fecha-pago"></div>
-      </div>
-      <div id="pago-diff-info" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:4px"></div>
-      <div class="form-section" style="margin-top:12px">Observaciones</div>
-      <div class="form-grid cols1"><div class="field"><textarea id="p-obs" placeholder="Abono parcial, cambio de plan..." style="min-height:70px"></textarea></div></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closePago()">Cancelar</button>
-      <button class="btn btn-grass" onclick="guardarPago()">💳 Guardar pago</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL RESERVA -->
 <div class="modal-overlay hidden" id="modal-reserva">
   <div class="modal">
@@ -677,16 +538,9 @@ textarea { resize: vertical; min-height: 60px; }
           <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px">💳 Registrar pago de esta reserva</div>
           <div style="font-size:11px;color:var(--text-muted)">Guarda la reserva primero, luego usa el módulo de pagos para registrar el cobro.</div>
         </div>
-        <button type="button" class="btn btn-grass btn-sm" onclick="irAPagoDesdeReserva()" style="flex-shrink:0;white-space:nowrap">
-          💳 Ir a Pagos →
-        </button>
+        <button type="button" class="btn btn-grass btn-sm" onclick="irAPagoDesdeReserva()" style="flex-shrink:0;white-space:nowrap">💳 Ir a Pagos →</button>
       </div>
-      <!-- Mantener campos ocultos para compatibilidad con guardar() -->
-      <input type="hidden" id="r-monto" value="">
-      <input type="hidden" id="r-pagado" value="">
-      <input type="hidden" id="r-banco" value="">
-      <input type="hidden" id="r-boleta" value="">
-      <input type="hidden" id="r-cobrador" value="">
+      <input type="hidden" id="r-monto" value=""><input type="hidden" id="r-pagado" value=""><input type="hidden" id="r-banco" value=""><input type="hidden" id="r-boleta" value=""><input type="hidden" id="r-cobrador" value="">
       <div class="form-section">Observaciones</div>
       <div class="form-grid cols1">
         <div class="field"><textarea id="r-obs" placeholder="Extra hora, cambio de fecha, descuento…" style="min-height:70px"></textarea></div>
@@ -715,7 +569,6 @@ textarea { resize: vertical; min-height: 60px; }
     </div>
   </div>
 </div>
-
 
 
 <script>
@@ -812,86 +665,82 @@ function renderDashboard(){
   document.getElementById('dash-pendbar').innerHTML=totPend>0?'<div class="pendbar">⚠️ <strong>'+conPend.length+' con saldo pendiente</strong> — Total: '+fmtM(totPend)+'</div>':'';
   const el=document.getElementById('dash-hoy');
   if(!deHoy.length){el.innerHTML='<div class="empty"><span class="icon">🎈</span>Sin reservas para hoy</div>';}
-  else el.innerHTML=deHoy.map(r=>'<div class="hoy-ev" onclick="verReserva(\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'" title="Doble clic para editar"><div class="hoy-ev-name">'+(r.cumple||'(sin nombre)')+' <span class="badge badge-gray" style="font-size:9px">'+(r.plan||'')+'</span></div><div class="hoy-ev-meta"><span>👤 '+(r.apoderado||'')+'</span><span>📞 '+(r.fono||'')+'</span>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'')+'</div><div class="hoy-ev-pago">'+(pend(r)>0?'<span class="pago-pend">⚠️ Saldo: '+fmtM(pend(r))+'</span>':'<span class="pago-ok">✓ Pagado</span>')+'</div></div>').join('');
+  else el.innerHTML=deHoy.map(r=>'<div class="hoy-ev" onclick="verReserva(\''+r.id+'\')"><div class="hoy-ev-name">'+(r.cumple||'(sin nombre)')+' <span class="badge badge-gray" style="font-size:9px">'+(r.plan||'')+'</span></div><div class="hoy-ev-meta"><span>👤 '+(r.apoderado||'')+'</span><span>📞 '+(r.fono||'')+'</span>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'')+'</div><div class="hoy-ev-pago">'+(pend(r)>0?'<span class="pago-pend">⚠️ Saldo: '+fmtM(pend(r))+'</span>':'<span class="pago-ok">✓ Pagado</span>')+'</div></div>').join('');
   const fin7=new Date(hoy);fin7.setDate(fin7.getDate()+7);
   const prox=all.filter(r=>{const f=new Date(r.fecha);f.setHours(0,0,0,0);return f>hoy&&f<=fin7;}).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   const elP=document.getElementById('dash-proximas');
   if(!prox.length){elP.innerHTML='<div class="empty"><span class="icon">🗓️</span>Sin reservas próximas</div>';}
-  else elP.innerHTML='<table><thead><tr><th>Fecha</th><th>Plan</th><th>Cumpleañer@</th><th>Apoderado</th><th>Monto</th><th>Estado</th></tr></thead><tbody>'+prox.map(r=>'<tr style="cursor:pointer" onclick="verReserva(\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'" title="Doble clic para editar"><td>'+fmtF(r.fecha)+'</td><td><span class="badge badge-gray">'+(r.plan||'–')+'</span></td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td>'+fmtM(r.monto)+'</td><td>'+(pend(r)>0?'<span class="badge badge-coral">Pend.'+fmtM(pend(r))+'</span>':'<span class="badge badge-grass">✓ Pagado</span>')+'</td></tr>').join('')+'</tbody></table>';
+  else elP.innerHTML='<table><thead><tr><th>Fecha</th><th>Plan</th><th>Cumpleañer@</th><th>Apoderado</th><th>Monto</th><th>Estado</th></tr></thead><tbody>'+prox.map(r=>'<tr onclick="verReserva(\''+r.id+'\')" style="cursor:pointer"><td>'+fmtF(r.fecha)+'</td><td><span class="badge badge-gray">'+(r.plan||'–')+'</span></td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td>'+fmtM(r.monto)+'</td><td>'+(pend(r)>0?'<span class="badge badge-coral">Pend.'+fmtM(pend(r))+'</span>':'<span class="badge badge-grass">✓ Pagado</span>')+'</td></tr>').join('')+'</tbody></table>';
 }
 
-function getCalClass(r){
-  const p=(r.plan||'').toUpperCase().trim();
-  const t=getTipo(r);
-  if(t==='paseo')return'paseo';
-  const isAM=p.startsWith('AM')||p.includes(' AM');
-  const isPM=p.startsWith('PM')||p.includes(' PM');
-  const isB=p.endsWith('B')||p.includes(' B ');
-  if(isAM&&isB)return'am-b';
-  if(isAM)return'am-a';
-  if(isPM&&isB)return'pm-b';
-  if(isPM)return'pm-a';
-  // fallback por palabras clave históricas
-  const pl=(r.plan||'').toLowerCase();
-  if(pl.includes('premium')||pl.includes('grande'))return isPM||!isAM?'pm-b':'am-b';
-  if(pl.includes('basic')||pl.includes('basico'))return isPM||!isAM?'pm-a':'am-a';
-  return'otro';
-}
 function calNav(d){S.calM+=d;if(S.calM>11){S.calM=0;S.calY++;}if(S.calM<0){S.calM=11;S.calY--;}renderCalendario();}
 function renderCalendario(){
-  const y=S.calY,m=S.calM;
-  document.getElementById('cal-label').textContent=MESES[m]+' '+y;
+  const y=S.calY,m=S.calM;document.getElementById('cal-label').textContent=MESES[m]+' '+y;
   const all=S.anioFiltro?S.reservas.filter(r=>new Date(r.fecha).getFullYear()==S.anioFiltro):S.reservas;
-  const pd=new Date(y,m,1).getDay();
-  const dm=new Date(y,m+1,0).getDate();
+  const pd=new Date(y,m,1).getDay();const dm=new Date(y,m+1,0).getDate();
   const hoy=new Date();hoy.setHours(0,0,0,0);
   const DOW=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   let h=DOW.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
   for(let i=0;i<pd;i++){const dd=new Date(y,m,1-pd+i);h+='<div class="cal-cell other-month"><div class="cal-day">'+dd.getDate()+'</div></div>';}
   for(let d=1;d<=dm;d++){
-    const f=new Date(y,m,d);f.setHours(0,0,0,0);
-    const iso=isoDate(f);
-    const isH=f.getTime()===hoy.getTime();
+    const f=new Date(y,m,d);f.setHours(0,0,0,0);const iso=isoDate(f);const isH=f.getTime()===hoy.getTime();
     const evs=all.filter(r=>isoDate(r.fecha)===iso);
-    const paseos=evs.filter(r=>getTipo(r)==='paseo');
-    const ams=evs.filter(r=>getTipo(r)!=='paseo'&&(r.plan||'').toUpperCase().startsWith('AM'));
-    const pms=evs.filter(r=>getTipo(r)!=='paseo'&&(r.plan||'').toUpperCase().startsWith('PM'));
-    const otros=evs.filter(r=>getTipo(r)!=='paseo'&&!ams.includes(r)&&!pms.includes(r));
-    const ordered=[...paseos,...ams,...pms,...otros];
     h+='<div class="cal-cell'+(isH?' today':'')+'" onclick="calClick(\''+iso+'\')">';
-    h+='<div class="cal-day">'+(isH?'<span style="background:var(--primary);color:var(--primary-text);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px">'+d+'</span>':d)+'</div>';
-    ordered.slice(0,4).forEach(function(r){
-      var cls=getCalClass(r);
-      var lbl=(r.plan||'').replace('PASEO','Paseo').replace('AM ','').replace('PM ','').trim();
-      var nom=(r.cumple||r.apoderado||'').substring(0,9);
-      h+='<div class="cal-ev '+cls+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')" title="'+(r.plan||'')+': '+(r.cumple||r.apoderado||'')+'">';
-      h+=lbl+(nom?' '+nom:'')+' </div>';
-    });
-    if(evs.length>4)h+='<div style="font-size:9px;color:var(--text-muted);padding:1px 4px;cursor:pointer" onclick="event.stopPropagation();calClick(\''+iso+'\')">+'+(evs.length-4)+' más</div>';
+    h+='<div class="cal-day" style="'+(isH?'color:var(--primary-dark);font-weight:800':'')+'">' +d+'</div>';
+    evs.slice(0,3).forEach(r=>{h+='<div class="cal-ev'+(getTipo(r)==='paseo'?' paseo':'')+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')">'+(r.plan||'')+' '+(r.cumple||r.apoderado||'')+'</div>';});
+    if(evs.length>3)h+='<div style="font-size:9px;color:var(--text-muted)">+'+(evs.length-3)+' más</div>';
     h+='</div>';
   }
-  const resto=(pd+dm)%7;
-  if(resto!==0)for(let i=1;i<=7-resto;i++)h+='<div class="cal-cell other-month"><div class="cal-day">'+i+'</div></div>';
+  const resto=(pd+dm)%7;if(resto!==0)for(let i=1;i<=7-resto;i++)h+='<div class="cal-cell other-month"><div class="cal-day">'+i+'</div></div>';
   document.getElementById('cal-grid').innerHTML=h;
 }
 function calClick(iso){document.getElementById('r-fecha').value=iso;updateDia();openNueva();}
 
 function renderSeg(){
   let rs=[...S.reservas];
-  const anio=document.getElementById('f-anio').value;const tipo=document.getElementById('f-tipo').value;
-  const pago=document.getElementById('f-pago').value;const bus=(document.getElementById('f-buscar').value||'').toLowerCase();
+  const anio=document.getElementById('f-anio').value;
+  const tipo=document.getElementById('f-tipo').value;
+  const pago=document.getElementById('f-pago').value;
+  const bus=(document.getElementById('f-buscar').value||'').toLowerCase();
   if(anio)rs=rs.filter(r=>new Date(r.fecha).getFullYear()==Number(anio));
   if(tipo)rs=rs.filter(r=>getTipo(r)===tipo);
-  if(pago==='ok')rs=rs.filter(r=>pend(r)<=0);if(pago==='pend')rs=rs.filter(r=>pend(r)>0);
+  if(pago==='ok')rs=rs.filter(r=>pend(r)<=0);
+  if(pago==='pend')rs=rs.filter(r=>pend(r)>0);
   if(bus)rs=rs.filter(r=>(r.cumple||'').toLowerCase().includes(bus)||(r.apoderado||'').toLowerCase().includes(bus)||(r.cobrador||'').toLowerCase().includes(bus));
   rs.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   document.getElementById('seg-count').textContent=rs.length;
   const tot=rs.reduce((s,r)=>s+(Number(r.monto)||0),0);
-  document.getElementById('seg-monto-total').textContent=rs.length?'Total: '+fmtM(tot):'';
+  document.getElementById('seg-total-monto').textContent=rs.length?'Total: '+fmtM(tot):'';
   const tbody=document.getElementById('seg-tbody');
-  if(!rs.length){tbody.innerHTML='';document.getElementById('seg-empty').style.display='';return;}
+  if(!rs.length){tbody.innerHTML='';document.getElementById('seg-empty').style.display='';deselectAll();return;}
   document.getElementById('seg-empty').style.display='none';
-  tbody.innerHTML=rs.map(r=>{const p=pend(r);return'<tr onclick="verReserva(\''+r.id+'\'" style="cursor:pointer" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))"><td style="white-space:nowrap"><strong>'+fmtF(r.fecha)+'</strong></td><td style="font-size:11px;color:var(--text-muted)">'+(r.dia||DIAS_FULL[new Date(r.fecha).getDay()]||'')+'</td><td><span class="badge badge-gray" style="font-size:9.5px">'+(r.plan||'–')+'</span></td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td style="color:var(--text-muted);font-size:11px">'+(r.fono||'–')+'</td><td><strong>'+fmtM(r.monto)+'</strong></td><td style="color:var(--grass)">'+fmtM(r.pagado)+'</td><td style="font-size:11px">'+(r.banco||'–')+'</td><td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td><td>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'–')+'</td><td style="font-size:11px">'+(r.cobrador||'–')+'</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.obs||'')+'</td><td onclick="event.stopPropagation()" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))">✏️</button> <button class="btn btn-danger btn-sm" onclick="eliminarR(\''+r.id+'\')">🗑️</button></td></tr>';}).join('');
+  // Reset checkbox global
+  const chkAll=document.getElementById('check-all');
+  if(chkAll){chkAll.checked=false;chkAll.indeterminate=false;}
+  const bar=document.getElementById('bulk-bar');
+  if(bar)bar.classList.remove('visible');
+  tbody.innerHTML=rs.map(r=>{
+    const p=pend(r);
+    return '<tr data-rid="'+r.id+'" onclick="onRowClick(event,\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))" style="cursor:pointer">'+
+      '<td class="td-check" onclick="event.stopPropagation()"><input type="checkbox" class="seg-check row-check" data-rid="'+r.id+'" onchange="onCheckRow()"></td>'+
+      '<td style="white-space:nowrap"><strong>'+fmtF(r.fecha)+'</strong></td>'+
+      '<td style="font-size:11px;color:var(--text-muted)">'+(r.dia||DIAS_FULL[new Date(r.fecha).getDay()]||'')+'</td>'+
+      '<td><span class="badge badge-gray" style="font-size:9.5px">'+(r.plan||'–')+'</span></td>'+
+      '<td><strong>'+(r.cumple||'–')+'</strong></td>'+
+      '<td>'+(r.apoderado||'–')+'</td>'+
+      '<td style="color:var(--text-muted);font-size:11px">'+(r.fono||'–')+'</td>'+
+      '<td><strong>'+fmtM(r.monto)+'</strong></td>'+
+      '<td style="color:var(--grass)">'+fmtM(r.pagado)+'</td>'+
+      '<td style="font-size:11px">'+(r.banco||'–')+'</td>'+
+      '<td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td>'+
+      '<td>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'–')+'</td>'+
+      '<td style="font-size:11px">'+(r.cobrador||'–')+'</td>'+
+      '<td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.obs||'')+'</td>'+
+      '<td onclick="event.stopPropagation()" style="white-space:nowrap">'+
+        '<button class="btn btn-outline btn-sm" onclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))">✏️</button> '+
+        '<button class="btn btn-danger btn-sm" onclick="eliminarR(\''+r.id+'\')">🗑️</button>'+
+      '</td></tr>';
+  }).join('');
 }
 
 function renderPagos(){
@@ -905,7 +754,7 @@ function renderPagos(){
   const tbody=document.getElementById('pagos-tbody');
   if(!rs.length){tbody.innerHTML='';document.getElementById('pagos-empty').style.display='';return;}
   document.getElementById('pagos-empty').style.display='none';
-  tbody.innerHTML=rs.map(r=>{const d=pend(r);return'<tr onclick="verReserva(\''+r.id+'\'" style="cursor:pointer" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))"><td style="white-space:nowrap">'+fmtF(r.fecha)+'</td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td><span class="badge badge-gray">'+(r.plan||'–')+'</span></td><td>'+fmtM(r.monto)+'</td><td style="color:var(--grass)">'+fmtM(r.pagado)+'</td><td>'+(d>0?'<span style="color:var(--coral);font-weight:700">'+fmtM(d)+'</span>':'<span style="color:var(--grass)">✓ Al día</span>')+'</td><td style="font-size:11px">'+(r.banco||'–')+'</td><td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td><td>'+(d>0?'<span class="badge badge-coral">Pendiente</span>':'<span class="badge badge-grass">Pagado</span>')+'</td></tr>';}).join('');
+  tbody.innerHTML=rs.map(r=>{const d=pend(r);return'<tr onclick="verReserva(\''+r.id+'\')" style="cursor:pointer"><td style="white-space:nowrap">'+fmtF(r.fecha)+'</td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td><span class="badge badge-gray">'+(r.plan||'–')+'</span></td><td>'+fmtM(r.monto)+'</td><td style="color:var(--grass)">'+fmtM(r.pagado)+'</td><td>'+(d>0?'<span style="color:var(--coral);font-weight:700">'+fmtM(d)+'</span>':'<span style="color:var(--grass)">✓ Al día</span>')+'</td><td style="font-size:11px">'+(r.banco||'–')+'</td><td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td><td>'+(d>0?'<span class="badge badge-coral">Pendiente</span>':'<span class="badge badge-grass">Pagado</span>')+'</td></tr>';}).join('');
 }
 
 function renderResumen(){
@@ -933,7 +782,7 @@ function handleFile(file){
   reader.onload=function(e){
     try{
       const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});window._wb=wb;
-      const matching=wb.SheetNames.filter(n=>{const t=n.trim().toUpperCase().replace(/\s+/g,'');return !n.includes('INSTRUCCIONES')&&!n.includes('📋')&&(t.startsWith(LOCAL_PREFIX));});
+      const matching=wb.SheetNames.filter(n=>n.trim().toUpperCase().startsWith(LOCAL_PREFIX));
       document.getElementById('sheet-tab-list').innerHTML=wb.SheetNames.map(s=>'<span class="sheet-tab'+(matching.includes(s)?' active':'')+'" onclick="toggleSheet(this)" data-sheet="'+s+'">'+s+'</span>').join('');
       document.getElementById('sheet-tabs').style.display='';
       const info=document.getElementById('import-match-info');info.style.display='';
@@ -951,83 +800,30 @@ function toggleSheet(el){
 }
 
 function parseSheet(ws,sheetName){
-  const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
-  if(!json.length)return[];
-  let hi=-1;
-  const KEYS=['FECHA','HORARIO','MONTO','PAGO','APODERADO','MAMA','CUMPLE'];
-  for(let i=0;i<Math.min(6,json.length);i++){
-    const r=json[i].map(c=>String(c||'').toUpperCase().trim());
-    if(r.filter(c=>KEYS.some(k=>c.includes(k))).length>=2){hi=i;break;}
-  }
-  if(hi<0){
-    const sample=json.slice(0,5).map(r=>r[1]).filter(Boolean);
-    const hasDates=sample.some(v=>String(v).match(/\d{4}-\d{2}-\d{2}/)||typeof v==='number'&&v>40000);
-    if(hasDates)return parseByPosition(json,sheetName,1,2,3,4,5,6,7,8,9,-1,-1);
-    return[];
-  }
-  const h=json[hi].map(c=>String(c||'').toUpperCase().trim());
-  function col(...names){for(const n of names){const i=h.findIndex(x=>x&&x.includes(n));if(i>=0)return i;}return-1;}
-  const cF=col('FECHA'),cT=col('HORARIO/TIPO','TIPO Y HORARIO','HORARIO','TIPO');
-  const cC=col('CUMPLEAÑER','CUMPLEANER','CUMPLE'),cA=col('MAMA','APODERADO'),cFo=col('TELEFONO','FONO');
-  const cM=col('MONTO','PAGO','TOTAL'),cB=col('BANCO','DETALLE'),cBo=col('BOLETA');
-  const cI=col('INVITACION','INV'),cD=col('DIA'),cCo=col('A:','COBRADOR','QUIEN');
-  const cObs=col('OBSERVACIONES','OBSERV');
-  if(cF<0)return[];
+  const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});if(!json.length)return[];
+  let hi=0;for(let i=0;i<Math.min(5,json.length);i++){const r=json[i].map(c=>String(c).toUpperCase().trim());if(r.some(c=>c.includes('FECHA')||c.includes('HORARIO')||c.includes('MONTO')||c.includes('PAGO'))){hi=i;break;}}
+  const h=json[hi].map(c=>String(c).toUpperCase().trim());
+  function col(){const ns=[...arguments];for(const n of ns){const i=h.findIndex(x=>x.includes(n));if(i>=0)return i;}return -1;}
+  const cF=col('FECHA'),cT=col('TIPO Y HORARIO','HORARIO/TIPO','HORARIO','TIPO'),cC=col('CUMPLEAÑER','CUMPLEANER','CUMPLE');
+  const cA=col('MAMA','APODERADO'),cFo=col('TELEFONO','FONO'),cM=col('PAGO','MONTO','TOTAL');
+  const cB=col('BANCO','DETALLE'),cBo=col('BOLETA'),cI=col('INVITACION','INV'),cD=col('DIA');
   const rows=[];
   for(let i=hi+1;i<json.length;i++){
-    const row=json[i];
-    if(!row||row.every(c=>c===''||c===null||c===undefined))continue;
-    let rawF=row[cF];if(rawF===''||rawF===null||rawF===undefined)continue;
-    const fecha=parseExcelDate(rawF);if(!fecha)continue;
-    const plan=String(cT>=0?row[cT]||'':'').trim();
-    const monto=parseMonto(cM>=0?row[cM]:0);
-    const banco=String(cB>=0?row[cB]||'':'').trim();
-    rows.push({fecha,dia:cD>=0?String(row[cD]||'').trim():DIAS_FULL[fecha.getDay()],
-      plan,tipo:plan.toLowerCase().includes('paseo')?'paseo':'cumple',
-      cumple:String(cC>=0?row[cC]||'':'').trim(),apoderado:String(cA>=0?row[cA]||'':'').trim(),
-      fono:String(cFo>=0?row[cFo]||'':'').trim(),monto,
-      pagado:banco&&banco!==''?monto:0,banco,
-      boleta:String(cBo>=0?row[cBo]||'':'').trim(),
-      inv:String(cI>=0?row[cI]||'':'').trim(),
-      cobrador:String(cCo>=0?row[cCo]||'':'').trim(),
-      obs:String(cObs>=0?row[cObs]||'':'').trim(),_sheet:sheetName});
-  }
-  return rows;
-}
-function parseByPosition(json,sheetName,cF,cT,cC,cA,cFo,cM,cB,cBo,cI,cCo,cObs){
-  const rows=[];
-  for(let i=0;i<json.length;i++){
     const row=json[i];if(!row||row.every(c=>c===''||c===null||c===undefined))continue;
-    let rawF=row[cF];if(rawF===''||rawF===null||rawF===undefined)continue;
-    const fecha=parseExcelDate(rawF);if(!fecha)continue;
-    const plan=String(cT>=0?row[cT]||'':'').trim();
-    const monto=parseMonto(cM>=0?row[cM]:0);
+    let rawF=cF>=0?row[cF]:'';if(rawF===''||rawF===null||rawF===undefined)continue;
+    let fecha;if(typeof rawF==='number'){const d=new Date(Math.round((rawF-25569)*86400*1000));fecha=new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());}
+    else if(rawF instanceof Date){fecha=rawF;}else{fecha=new Date(rawF);}
+    if(isNaN(fecha)||fecha.getFullYear()<2000||fecha.getFullYear()>2030)continue;
+    const plan=String(cT>=0?row[cT]||'':'').trim();const monto=Number(String(cM>=0?row[cM]||0:0).replace(/[^0-9.-]/g,''))||0;
     const banco=String(cB>=0?row[cB]||'':'').trim();
-    rows.push({fecha,dia:DIAS_FULL[fecha.getDay()],plan,tipo:plan.toLowerCase().includes('paseo')?'paseo':'cumple',
+    rows.push({fecha,dia:cD>=0?String(row[cD]||'').trim():DIAS_FULL[fecha.getDay()],plan:plan||'',tipo:plan.toLowerCase().includes('paseo')?'paseo':'cumple',
       cumple:String(cC>=0?row[cC]||'':'').trim(),apoderado:String(cA>=0?row[cA]||'':'').trim(),
-      fono:String(cFo>=0?row[cFo]||'':'').trim(),monto,pagado:banco&&banco!==''?monto:0,banco,
-      boleta:String(cBo>=0?row[cBo]||'':'').trim(),inv:String(cI>=0?row[cI]||'':'').trim(),
-      cobrador:'',obs:'',_sheet:sheetName});
+      fono:String(cFo>=0?row[cFo]||'':'').trim(),monto,pagado:banco&&banco!=='–'?monto:0,banco,
+      boleta:String(cBo>=0?row[cBo]||'':'').trim(),inv:String(cI>=0?row[cI]||'':'').trim(),cobrador:'',obs:'',_sheet:sheetName});
   }
   return rows;
 }
-function parseExcelDate(rawF){
-  if(rawF instanceof Date)return new Date(rawF.getFullYear(),rawF.getMonth(),rawF.getDate());
-  if(typeof rawF==='number'&&rawF>40000){
-    const d=new Date(Math.round((rawF-25569)*86400*1000));
-    return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
-  }
-  const s=String(rawF).trim();if(!s||s==='None'||s==='null')return null;
-  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m){const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));return isNaN(d)?null:d;}
-  const d=new Date(s);
-  if(isNaN(d)||d.getFullYear()<2000||d.getFullYear()>2030)return null;
-  return d;
-}
-function parseMonto(v){
-  if(!v&&v!==0)return 0;if(typeof v==='number')return Math.round(v);
-  return Number(String(v).replace(/[^0-9.-]/g,''))||0;
-}
+
 function renderPreview(){
   const rs=S.importRows;if(!rs.length){document.getElementById('import-preview').style.display='none';return;}
   document.getElementById('import-preview').style.display='';document.getElementById('preview-count').textContent=rs.length;document.getElementById('btn-import').textContent='✅ Importar '+rs.length+' registros';
@@ -1040,10 +836,7 @@ function clearImport(){S.importRows=[];['import-preview','sheet-tabs'].forEach(i
 async function confirmarImport(){
   const rows=S.importRows;if(!rows.length)return;
   if(!confirm('¿Importar '+rows.length+' registros a '+LOCAL_NAME+'? Los duplicados se omitirán.'))return;
-  // Solo filtrar duplicados si hay datos REALES de Firebase (no demo generado)
-  const existKeys = S.useFirebase
-    ? new Set(S.reservas.map(r=>isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()))
-    : new Set(); // en modo demo/local no filtrar
+  const existKeys=new Set(S.reservas.map(r=>isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()));
   const nuevos=rows.filter(r=>!existKeys.has(isoDate(r.fecha)+'_'+(r.apoderado||'').toLowerCase()));
   const dupes=rows.length-nuevos.length;
   document.getElementById('import-progress').style.display='';document.getElementById('import-preview').style.display='none';
@@ -1056,14 +849,7 @@ async function confirmarImport(){
       document.getElementById('progress-bar').style.width=pct+'%';document.getElementById('progress-label').textContent=importados+' / '+total+' ('+pct+'%)';
     }
     await load();
-  }else{
-    // Modo sin Firebase: reemplazar datos demo con los datos importados
-    S.reservas = S.reservas.filter(r => !r.id.startsWith('demo_') && !r.id.startsWith('hoy'));
-    nuevos.forEach(r=>{S.reservas.unshift({id:'imp_'+Date.now()+'_'+Math.random(),...r});});
-    importados=nuevos.length;
-    document.getElementById('progress-bar').style.width='100%';
-    document.getElementById('progress-label').textContent=importados+' / '+total;
-  }
+  }else{nuevos.forEach(r=>{S.reservas.push({id:'imp_'+Date.now()+'_'+Math.random(),...r});});importados=nuevos.length;document.getElementById('progress-bar').style.width='100%';document.getElementById('progress-label').textContent=importados+' / '+total;}
   const log={fecha:new Date(),total:rows.length,importados:nuevos.length,dupes};S.importLogs.unshift(log);
   try{localStorage.setItem(COLLECTION+'_logs',JSON.stringify(S.importLogs.slice(0,10)));}catch(e){}
   setTimeout(()=>{document.getElementById('import-progress').style.display='none';document.getElementById('import-status').innerHTML='<div class="alert alert-success">✅ '+importados+' registros importados'+(dupes>0?' · '+dupes+' duplicados omitidos':'')+'.</div>';clearImport();populateAnios();renderAll();loadImportLog();},600);
@@ -1105,7 +891,6 @@ function verReserva(id){
   document.getElementById('ver-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px"><div><div class="form-section">Fecha y plan</div><p style="font-size:13px"><strong>'+(r.dia||'')+' '+fmtF(r.fecha)+'</strong></p><p style="font-size:12px;color:var(--text-muted);margin-top:3px">'+(r.plan||'')+' · '+(r.tipo||'')+'</p></div><div><div class="form-section">Cumpleañer@ / Apoderado</div><p style="font-size:15px;font-weight:800">'+(r.cumple||'–')+'</p><p style="font-size:12px;margin-top:2px">👤 '+(r.apoderado||'–')+' · 📞 '+(r.fono||'–')+'</p>'+(r.inv?'<p style="margin-top:6px"><span class="inv-tag">🎨 '+r.inv+'</span></p>':'')+'</div></div><div class="form-section">Pago</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"><div class="stat-card"><div class="label">Acordado</div><div class="value" style="font-size:18px">'+fmtM(r.monto)+'</div></div><div class="stat-card sky"><div class="label">Pagado</div><div class="value" style="font-size:18px">'+fmtM(r.pagado)+'</div></div><div class="stat-card '+(p>0?'coral':'grass')+'"><div class="label">'+(p>0?'Saldo pendiente':'✓ Al día')+'</div><div class="value" style="font-size:18px">'+(p>0?fmtM(p):'$0')+'</div></div></div><p style="font-size:12px;color:var(--text-muted)">Banco: <strong>'+(r.banco||'–')+'</strong> · Boleta: <strong>'+(r.boleta?'#'+r.boleta:'–')+'</strong> · Cobrador: <strong>'+(r.cobrador||'–')+'</strong></p>'+(r.obs?'<div class="alert alert-warn" style="margin-top:12px">📝 '+r.obs+'</div>':'');
   document.getElementById('btn-edit').onclick=function(){closeVer();openNueva(r);};
   document.getElementById('btn-del').onclick=function(){closeVer();eliminarR(id);};
-  document.getElementById('btn-pago').onclick=function(){closeVer();openNuevoPago(id);};
   document.getElementById('modal-ver').classList.remove('hidden');
 }
 function closeVer(){document.getElementById('modal-ver').classList.add('hidden');}
@@ -1116,19 +901,14 @@ async function eliminarR(id){
   S.reservas=S.reservas.filter(r=>r.id!==id);populateAnios();renderAll();
 }
 
-function showPanel(name, btn){
+function showPanel(name){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const el=document.getElementById('panel-'+name);
-  if(el)el.classList.add('active');
+  const el=document.getElementById('panel-'+name);if(el)el.classList.add('active');
   const titles={dashboard:'Dashboard',calendario:'Calendario',seguimiento:'Seguimiento',pagos:'Pagos',importar:'Importar Excel',resumen:'Resumen'};
   document.getElementById('panel-title').textContent=titles[name]||name;
-  if(btn){btn.classList.add('active');}
-  else{const b=document.querySelector('[data-panel="'+name+'"]');if(b)b.classList.add('active');}
-  if(name==='seguimiento')renderSeg();
-  if(name==='pagos')renderPagos();
-  if(name==='resumen')renderResumen();
-  if(name==='importar')loadImportLog();
+  if(event&&event.currentTarget)event.currentTarget.classList.add('active');
+  if(name==='seguimiento')renderSeg();if(name==='pagos')renderPagos();if(name==='resumen')renderResumen();if(name==='importar')loadImportLog();
 }
 
 function onAnioChange(){S.anioFiltro=document.getElementById('topbar-anio').value;if(S.anioFiltro){S.calY=Number(S.anioFiltro);S.calM=0;}renderAll();}
@@ -1143,177 +923,92 @@ function exportCSV(){
 }
 
 
-// ── NUEVO PAGO ───────────────────────────────────────────
-let pagoReservaId = null;
-
-function openNuevoPago(reservaId) {
-  pagoReservaId = reservaId || null;
-  document.getElementById('p-fecha-pago').value = isoDate(new Date());
-  document.getElementById('pago-buscar').value = '';
-  document.getElementById('pago-sugerencias').style.display = 'none';
-  document.getElementById('pago-diff-info').style.display = 'none';
-  
-  if (reservaId) {
-    const r = S.reservas.find(x => x.id === reservaId);
-    if (r) fillPagoFromReserva(r);
-  } else {
-    // Limpiar campos
-    ['p-fecha-res','p-nombre','p-plan','p-monto','p-pagado','p-banco','p-boleta','p-cobrador','p-obs'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.value = '';
-    });
-    document.getElementById('pago-reserva-info').textContent = 'Busca una reserva existente o ingresa los datos manualmente.';
-  }
-  document.getElementById('modal-pago').classList.remove('hidden');
+function getCalClass(r){
+  const p=(r.plan||'').toUpperCase().trim();
+  const t=getTipo(r);
+  if(t==='paseo')return'paseo';
+  const isAM=p.startsWith('AM')||p.includes(' AM');
+  const isPM=p.startsWith('PM')||p.includes(' PM');
+  const isB=p.endsWith('B')||p.includes(' B ');
+  if(isAM&&isB)return'am-b';
+  if(isAM)return'am-a';
+  if(isPM&&isB)return'pm-b';
+  if(isPM)return'pm-a';
+  const pl=(r.plan||'').toLowerCase();
+  if(pl.includes('premium')||pl.includes('grande'))return isPM||!isAM?'pm-b':'am-b';
+  if(pl.includes('basic')||pl.includes('basico'))return isPM||!isAM?'pm-a':'am-a';
+  return'otro';
 }
-
-function fillPagoFromReserva(r) {
-  pagoReservaId = r.id;
-  document.getElementById('p-fecha-res').value = fmtF(r.fecha);
-  document.getElementById('p-nombre').value = (r.cumple ? r.cumple + ' — ' : '') + (r.apoderado || '');
-  document.getElementById('p-plan').value = r.plan || '';
-  document.getElementById('p-monto').value = r.monto || '';
-  const saldo = pend(r);
-  document.getElementById('p-pagado').value = saldo > 0 ? saldo : (r.monto || '');
-  document.getElementById('p-cobrador').value = r.cobrador || '';
-  const info = document.getElementById('pago-reserva-info');
-  info.className = saldo > 0 ? 'alert alert-warn' : 'alert alert-success';
-  info.innerHTML = saldo > 0
-    ? '⚠️ Saldo pendiente: <strong>' + fmtM(saldo) + '</strong> de un total de ' + fmtM(r.monto)
-    : '✅ Esta reserva ya está pagada en su totalidad (' + fmtM(r.monto) + ')';
-  document.getElementById('pago-sugerencias').style.display = 'none';
-  calcDiffPago();
-}
-
-function buscarParaPago() {
-  const q = (document.getElementById('pago-buscar').value || '').toLowerCase().trim();
-  const sug = document.getElementById('pago-sugerencias');
-  if (q.length < 2) { sug.style.display = 'none'; return; }
-  const matches = S.reservas.filter(function(r) {
-    return (r.cumple || '').toLowerCase().includes(q) || (r.apoderado || '').toLowerCase().includes(q);
-  }).slice(0, 8);
-  if (!matches.length) { sug.style.display = 'none'; return; }
-  sug.style.display = '';
-  sug.innerHTML = matches.map(function(r) {
-    const s = pend(r);
-    return '<div class="pago-sug-item" data-rid="' + r.id + '">' +
-      '<strong>' + (r.cumple || '(sin nombre)') + '</strong> — ' + (r.apoderado || '') +
-      ' <span style="color:var(--text-muted);font-size:10px">' + fmtF(r.fecha) + ' · ' + (r.plan || '') + '</span>' +
-      (s > 0 ? ' <span style="color:var(--coral);font-size:10px;font-weight:700"> Saldo: ' + fmtM(s) + '</span>' : ' <span style="color:var(--grass);font-size:10px"> ✓ Pagado</span>') +
-      '</div>';
-  }).join('');
-  // Agregar listeners con JS (evitar onmouseover/onclick inline problemáticos)
-  sug.querySelectorAll('.pago-sug-item').forEach(function(el) {
-    el.addEventListener('click', function() {
-      const rid = el.dataset.rid;
-      const r = S.reservas.find(function(x) { return x.id === rid; });
-      if (r) fillPagoFromReserva(r);
-    });
-  });
-}
-function calcDiffPago() {
-  const monto = Number(document.getElementById('p-monto').value) || 0;
-  const pagado = Number(document.getElementById('p-pagado').value) || 0;
-  const el = document.getElementById('pago-diff-info');
-  if (!monto || !pagado) { el.style.display = 'none'; return; }
-  const diff = monto - pagado;
-  el.style.display = '';
-  if (diff > 0) {
-    el.style.background = 'var(--coral-light)'; el.style.color = 'var(--coral)';
-    el.innerHTML = '⚠️ Quedaría un saldo pendiente de <strong>' + fmtM(diff) + '</strong>';
-  } else if (diff === 0) {
-    el.style.background = 'var(--grass-light)'; el.style.color = 'var(--grass)';
-    el.innerHTML = '✅ Pago completo — sin saldo pendiente';
-  } else {
-    el.style.background = 'var(--sky-light)'; el.style.color = 'var(--sky)';
-    el.innerHTML = 'ℹ️ El pago supera el monto acordado en <strong>' + fmtM(Math.abs(diff)) + '</strong>';
-  }
-}
-
-async function guardarPago() {
-  const pagado = Number(document.getElementById('p-pagado').value) || 0;
-  const banco = document.getElementById('p-banco').value.trim();
-  if (!pagado) { alert('Ingresa el monto pagado'); return; }
-  if (!banco) { alert('Ingresa el banco o medio de pago'); return; }
-  
-  // Si hay reserva vinculada, actualizar sus campos de pago
-  if (pagoReservaId) {
-    const r = S.reservas.find(x => x.id === pagoReservaId);
-    if (r) {
-      const nuevoPagado = (Number(r.pagado) || 0) + pagado;
-      const updates = {
-        pagado: nuevoPagado,
-        banco: banco,
-        boleta: document.getElementById('p-boleta').value.trim() || r.boleta || '',
-        cobrador: document.getElementById('p-cobrador').value.trim() || r.cobrador || '',
-        obs: [r.obs, document.getElementById('p-obs').value.trim()].filter(Boolean).join(' | '),
-        updatedAt: new Date()
-      };
-      try {
-        if (S.useFirebase) {
-          await S.db.collection(COLLECTION).doc(pagoReservaId).update({
-            ...updates,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        }
-        Object.assign(r, updates);
-      } catch(e) { Object.assign(r, updates); }
-    }
-  } else {
-    // Pago standalone: crear como nueva reserva con tipo "pago"
-    const data = {
-      fecha: new Date(document.getElementById('p-fecha-pago').value + 'T12:00:00'),
-      cumple: '', apoderado: document.getElementById('p-nombre').value.trim(),
-      plan: document.getElementById('p-plan').value.trim(), tipo: 'pago',
-      monto: Number(document.getElementById('p-monto').value) || pagado,
-      pagado, banco,
-      boleta: document.getElementById('p-boleta').value.trim(),
-      cobrador: document.getElementById('p-cobrador').value.trim(),
-      obs: document.getElementById('p-obs').value.trim(),
-      dia: '', createdAt: new Date()
-    };
-    try {
-      if (S.useFirebase) {
-        const ref = await S.db.collection(COLLECTION).add({...data, fecha: firebase.firestore.Timestamp.fromDate(data.fecha), createdAt: firebase.firestore.FieldValue.serverTimestamp()});
-        data.id = ref.id;
-      } else { data.id = 'pago_' + Date.now(); }
-      S.reservas.unshift(data);
-    } catch(e) { data.id = 'pago_' + Date.now(); S.reservas.unshift(data); }
-  }
-  
-  closePago();
-  populateAnios();
-  renderAll();
-}
-
-function closePago() {
-  document.getElementById('modal-pago').classList.add('hidden');
-  pagoReservaId = null;
-}
-
-
-function irAPagoDesdeReserva() {
-  // Si hay apoderado, guardamos primero y luego vamos a pago
-  const apoderado = document.getElementById('r-apoderado').value.trim();
-  if (!apoderado) {
-    alert('Completa al menos el nombre del Apoderado antes de ir a Pagos.');
+function onRowClick(event, id) {
+  if (event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON') return;
+  const anySelected = document.querySelectorAll('.row-check:checked').length > 0;
+  if (anySelected) {
+    const cb = document.querySelector('.row-check[data-rid="'+id+'"]');
+    if (cb) { cb.checked = !cb.checked; onCheckRow(); }
     return;
   }
-  // Guardar la reserva silenciosamente y luego abrir pago
-  guardar().then(function() {
-    closeModal();
-    // Breve delay para que la reserva quede en S.reservas
-    setTimeout(function() {
-      // Buscar la reserva recién creada (la primera, que es la más reciente)
-      if (S.reservas.length > 0) {
-        openNuevoPago(S.reservas[0].id);
-      } else {
-        openNuevoPago();
-      }
-    }, 300);
-  }).catch(function() {
-    closeModal();
-    openNuevoPago();
+  verReserva(id);
+}
+function onCheckAll(chkAll) {
+  document.querySelectorAll('.row-check').forEach(function(cb) {
+    cb.checked = chkAll.checked;
+    cb.closest('tr').classList.toggle('selected', chkAll.checked);
   });
+  updateBulkBar();
+}
+function onCheckRow() {
+  const all = document.querySelectorAll('.row-check');
+  const checked = document.querySelectorAll('.row-check:checked');
+  const chkAll = document.getElementById('check-all');
+  if (chkAll) { chkAll.checked = checked.length === all.length && all.length > 0; chkAll.indeterminate = checked.length > 0 && checked.length < all.length; }
+  document.querySelectorAll('.row-check').forEach(function(cb) { cb.closest('tr').classList.toggle('selected', cb.checked); });
+  updateBulkBar();
+}
+function updateBulkBar() {
+  const n = document.querySelectorAll('.row-check:checked').length;
+  const bar = document.getElementById('bulk-bar');
+  const btnAll = document.getElementById('btn-sel-all');
+  if (bar) bar.classList.toggle('visible', n > 0);
+  const countEl = document.getElementById('bulk-n');
+  if (countEl) countEl.textContent = n;
+  if (btnAll) btnAll.textContent = n > 0 ? '☑ Seleccionar todo' : '☐ Seleccionar todo';
+}
+function deselectAll() {
+  document.querySelectorAll('.row-check').forEach(function(cb) { cb.checked = false; cb.closest('tr').classList.remove('selected'); });
+  const chkAll = document.getElementById('check-all');
+  if (chkAll) { chkAll.checked = false; chkAll.indeterminate = false; }
+  updateBulkBar();
+}
+function toggleSelectAll() {
+  const all = document.querySelectorAll('.row-check');
+  const checked = document.querySelectorAll('.row-check:checked');
+  const shouldCheck = checked.length < all.length;
+  all.forEach(function(cb) { cb.checked = shouldCheck; cb.closest('tr').classList.toggle('selected', shouldCheck); });
+  const chkAll = document.getElementById('check-all');
+  if (chkAll) { chkAll.checked = shouldCheck; chkAll.indeterminate = false; }
+  updateBulkBar();
+}
+async function eliminarSeleccionados() {
+  const checked = document.querySelectorAll('.row-check:checked');
+  const ids = [...checked].map(function(cb) { return cb.dataset.rid; });
+  if (!ids.length) return;
+  if (!confirm('¿Eliminar ' + ids.length + ' registro' + (ids.length !== 1 ? 's' : '') + '? Esta acción no se puede deshacer.')) return;
+  if (S.useFirebase) {
+    for (let i = 0; i < ids.length; i += 400) {
+      const batch = S.db.batch();
+      ids.slice(i, i + 400).forEach(function(id) {
+        if (!id.startsWith('demo_') && !id.startsWith('hoy')) { try { batch.delete(S.db.collection(COLLECTION).doc(id)); } catch(e){} }
+      });
+      try { await batch.commit(); } catch(e) { console.warn(e); }
+    }
+  }
+  S.reservas = S.reservas.filter(function(r) { return !ids.includes(r.id); });
+  deselectAll(); populateAnios(); renderAll();
+}
+function irAPagoDesdeReserva() {
+  const apoderado = document.getElementById('r-apoderado').value.trim();
+  if (!apoderado) { alert('Completa al menos el nombre del Apoderado antes de ir a Pagos.'); return; }
+  guardar().then(function() { closeModal(); setTimeout(function() { if (S.reservas.length > 0) openNuevoPago(S.reservas[0].id); else openNuevoPago(); }, 300); }).catch(function() { closeModal(); openNuevoPago(); });
 }
 
 initFirebase();

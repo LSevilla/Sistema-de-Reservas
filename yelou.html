@@ -695,20 +695,49 @@ function calClick(iso){document.getElementById('r-fecha').value=iso;updateDia();
 
 function renderSeg(){
   let rs=[...S.reservas];
-  const anio=document.getElementById('f-anio').value;const tipo=document.getElementById('f-tipo').value;
-  const pago=document.getElementById('f-pago').value;const bus=(document.getElementById('f-buscar').value||'').toLowerCase();
+  const anio=document.getElementById('f-anio').value;
+  const tipo=document.getElementById('f-tipo').value;
+  const pago=document.getElementById('f-pago').value;
+  const bus=(document.getElementById('f-buscar').value||'').toLowerCase();
   if(anio)rs=rs.filter(r=>new Date(r.fecha).getFullYear()==Number(anio));
   if(tipo)rs=rs.filter(r=>getTipo(r)===tipo);
-  if(pago==='ok')rs=rs.filter(r=>pend(r)<=0);if(pago==='pend')rs=rs.filter(r=>pend(r)>0);
+  if(pago==='ok')rs=rs.filter(r=>pend(r)<=0);
+  if(pago==='pend')rs=rs.filter(r=>pend(r)>0);
   if(bus)rs=rs.filter(r=>(r.cumple||'').toLowerCase().includes(bus)||(r.apoderado||'').toLowerCase().includes(bus)||(r.cobrador||'').toLowerCase().includes(bus));
   rs.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   document.getElementById('seg-count').textContent=rs.length;
   const tot=rs.reduce((s,r)=>s+(Number(r.monto)||0),0);
   document.getElementById('seg-total-monto').textContent=rs.length?'Total: '+fmtM(tot):'';
   const tbody=document.getElementById('seg-tbody');
-  if(!rs.length){tbody.innerHTML='';document.getElementById('seg-empty').style.display='';return;}
+  if(!rs.length){tbody.innerHTML='';document.getElementById('seg-empty').style.display='';deselectAll();return;}
   document.getElementById('seg-empty').style.display='none';
-  tbody.innerHTML=rs.map(r=>{const p=pend(r);return'<tr onclick="verReserva(\''+r.id+'\')" style="cursor:pointer"><td style="white-space:nowrap"><strong>'+fmtF(r.fecha)+'</strong></td><td style="font-size:11px;color:var(--text-muted)">'+(r.dia||DIAS_FULL[new Date(r.fecha).getDay()]||'')+'</td><td><span class="badge badge-gray" style="font-size:9.5px">'+(r.plan||'–')+'</span></td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td style="color:var(--text-muted);font-size:11px">'+(r.fono||'–')+'</td><td><strong>'+fmtM(r.monto)+'</strong></td><td style="color:var(--grass)">'+fmtM(r.pagado)+'</td><td style="font-size:11px">'+(r.banco||'–')+'</td><td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td><td>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'–')+'</td><td style="font-size:11px">'+(r.cobrador||'–')+'</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.obs||'')+'</td><td onclick="event.stopPropagation()" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))">✏️</button> <button class="btn btn-danger btn-sm" onclick="eliminarR(\''+r.id+'\')">🗑️</button></td></tr>';}).join('');
+  // Reset checkbox global
+  const chkAll=document.getElementById('check-all');
+  if(chkAll){chkAll.checked=false;chkAll.indeterminate=false;}
+  const bar=document.getElementById('bulk-bar');
+  if(bar)bar.classList.remove('visible');
+  tbody.innerHTML=rs.map(r=>{
+    const p=pend(r);
+    return '<tr data-rid="'+r.id+'" onclick="onRowClick(event,\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))" style="cursor:pointer">'+
+      '<td class="td-check" onclick="event.stopPropagation()"><input type="checkbox" class="seg-check row-check" data-rid="'+r.id+'" onchange="onCheckRow()"></td>'+
+      '<td style="white-space:nowrap"><strong>'+fmtF(r.fecha)+'</strong></td>'+
+      '<td style="font-size:11px;color:var(--text-muted)">'+(r.dia||DIAS_FULL[new Date(r.fecha).getDay()]||'')+'</td>'+
+      '<td><span class="badge badge-gray" style="font-size:9.5px">'+(r.plan||'–')+'</span></td>'+
+      '<td><strong>'+(r.cumple||'–')+'</strong></td>'+
+      '<td>'+(r.apoderado||'–')+'</td>'+
+      '<td style="color:var(--text-muted);font-size:11px">'+(r.fono||'–')+'</td>'+
+      '<td><strong>'+fmtM(r.monto)+'</strong></td>'+
+      '<td style="color:var(--grass)">'+fmtM(r.pagado)+'</td>'+
+      '<td style="font-size:11px">'+(r.banco||'–')+'</td>'+
+      '<td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td>'+
+      '<td>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'–')+'</td>'+
+      '<td style="font-size:11px">'+(r.cobrador||'–')+'</td>'+
+      '<td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.obs||'')+'</td>'+
+      '<td onclick="event.stopPropagation()" style="white-space:nowrap">'+
+        '<button class="btn btn-outline btn-sm" onclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))">✏️</button> '+
+        '<button class="btn btn-danger btn-sm" onclick="eliminarR(\''+r.id+'\')">🗑️</button>'+
+      '</td></tr>';
+  }).join('');
 }
 
 function renderPagos(){
