@@ -144,8 +144,20 @@ textarea { resize: vertical; min-height: 60px; }
 .cal-cell.other-month .cal-day { color: #ccc; }
 .cal-day { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px; }
 .cal-cell.today .cal-day { color: var(--primary-dark); }
-.cal-ev { font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; background: var(--primary-light); color: var(--primary-dark); }
-.cal-ev.paseo { background: var(--grass-light); color: #1E5C22; }
+.cal-ev { font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; position: relative; }
+/* AM = Mañana → azul */
+.cal-ev.am-a  { background: #DBEAFE; color: #1E40AF; border-left: 3px solid #3B82F6; }
+.cal-ev.am-b  { background: #BFDBFE; color: #1E3A8A; border-left: 3px solid #1D4ED8; }
+/* PM = Tarde → naranja/ámbar */
+.cal-ev.pm-a  { background: #FEF3C7; color: #92400E; border-left: 3px solid #F59E0B; }
+.cal-ev.pm-b  { background: #FDE68A; color: #78350F; border-left: 3px solid #D97706; }
+/* Paseo = día completo → verde */
+.cal-ev.paseo { background: #D1FAE5; color: #065F46; border-left: 3px solid #10B981; }
+/* Otro / sin clasificar */
+.cal-ev.otro  { background: #F3F4F6; color: #4B5563; border-left: 3px solid #9CA3AF; }
+/* Celda hoy */
+.cal-cell.today { background: #FFFDE6; }
+.cal-cell.today .cal-day { color: var(--primary-dark); font-weight: 800; }
 
 /* ── IMPORT ── */
 .import-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg); }
@@ -189,6 +201,18 @@ textarea { resize: vertical; min-height: 60px; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.nav-action { display:flex;align-items:center;gap:8px;padding:8px 14px;margin:3px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;width:calc(100% - 20px);text-align:left;transition:all 0.15s; }
+.nav-action.primary { background:var(--primary);color:var(--primary-text); }
+.nav-action.primary:hover { background:var(--primary-dark);color:var(--primary-text); }
+.nav-action.secondary { background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.12); }
+.nav-action.secondary:hover { background:rgba(255,255,255,0.12);color:#fff; }
+.nav-action svg { width:14px;height:14px;flex-shrink:0; }
+.nav-action-pago { display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.12);transition:all 0.15s;width:100%; }
+.nav-action-pago:hover { background:rgba(255,255,255,0.15);color:#fff; }
+.pago-sug-item { padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;transition:background 0.1s; }
+.pago-sug-item:hover { background:var(--primary-light); }
+.pago-sug-item:last-child { border-bottom:none; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -222,6 +246,10 @@ textarea { resize: vertical; min-height: 60px; }
       Calendario
     </button>
     <div class="nav-section">Datos</div>
+    <button class="nav-action primary" onclick="openNueva()">
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Nueva Reserva
+    </button>
     <button class="nav-item" data-panel="seguimiento" onclick="showPanel('seguimiento', this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       Seguimiento
@@ -230,9 +258,14 @@ textarea { resize: vertical; min-height: 60px; }
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
       Pagos
     </button>
-    <button class="nav-item" data-panel="importar" onclick="showPanel('importar', this)">
+    <button class="nav-action secondary" onclick="showPanel('importar', document.querySelector('[data-panel=importar]'))" style="margin-top:2px">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Importar Excel
+    </button>
+    <button class="nav-item" data-panel="importar" onclick="showPanel('importar', this)" style="display:none"><!-- hidden anchor for active state --></button>
+    <button class="nav-action secondary" onclick="exportCSV()" style="margin-top:2px">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar CSV
     </button>
     <div class="nav-section">Análisis</div>
     <button class="nav-item" data-panel="resumen" onclick="showPanel('resumen', this)">
@@ -241,7 +274,7 @@ textarea { resize: vertical; min-height: 60px; }
     </button>
   </nav>
   <div class="sidebar-footer">
-    Yelou · Sistema de Reservas v2.0
+    Yelou · Sistema de Reservas v2.1
   </div>
 </div>
 
@@ -253,11 +286,9 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="topbar-title" id="panel-title">Dashboard</div>
     </div>
     <div class="topbar-actions">
-      <select id="topbar-anio" onchange="onAnioChange()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;background:#fff">
+      <select id="topbar-anio" onchange="onAnioChange()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;background:#fff;cursor:pointer">
         <option value="">Todos los años</option>
       </select>
-      <button class="btn btn-outline btn-sm" onclick="exportCSV()">📥 Exportar CSV</button>
-      <button class="btn btn-primary" onclick="openNueva()">＋ Nueva Reserva</button>
     </div>
   </div>
 
@@ -291,9 +322,13 @@ textarea { resize: vertical; min-height: 60px; }
       <button class="cal-btn" onclick="calNav(1)">›</button>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
-    <div style="margin-top:10px;display:flex;gap:14px;font-size:11px;color:var(--text-muted)">
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--primary-light);border-radius:2px;border:1px solid var(--primary-dark);display:inline-block"></span>Cumpleaños</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--grass-light);border-radius:2px;border:1px solid var(--grass);display:inline-block"></span>Paseo de curso</span>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;font-size:10.5px;color:var(--text-muted);align-items:center">
+      <span style="font-weight:700;color:var(--navy);margin-right:2px">Leyenda:</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#DBEAFE;border-radius:2px;border-left:3px solid #3B82F6;display:inline-block"></span>AM — A (Normal mañana)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#BFDBFE;border-radius:2px;border-left:3px solid #1D4ED8;display:inline-block"></span>AM — B (Grande mañana)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#FEF3C7;border-radius:2px;border-left:3px solid #F59E0B;display:inline-block"></span>PM — A (Normal tarde)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#FDE68A;border-radius:2px;border-left:3px solid #D97706;display:inline-block"></span>PM — B (Grande tarde)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#D1FAE5;border-radius:2px;border-left:3px solid #10B981;display:inline-block"></span>Paseo (día completo)</span>
     </div>
   </div>
 
@@ -345,7 +380,10 @@ textarea { resize: vertical; min-height: 60px; }
     </div>
     <div class="stats-grid" id="pagos-stats" style="grid-template-columns:repeat(4,1fr)"></div>
     <div class="card">
-      <div class="card-header"><div class="card-title">💳 Registro de pagos</div></div>
+      <div class="card-header">
+        <div class="card-title">💳 Registro de pagos</div>
+        <button class="btn btn-primary btn-sm" onclick="openNuevoPago()">＋ Nuevo Pago</button>
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Fecha</th><th>Cumpleañer@</th><th>Apoderado</th><th>Plan</th><th>Acordado</th><th>Pagado</th><th>Diferencia</th><th>Banco/Medio</th><th>Boleta</th><th>Estado</th></tr></thead>
@@ -363,7 +401,101 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="card-title">📂 Importar datos históricos desde Excel</div>
       </div>
       <div class="card-body">
-        <div class="alert alert-warn">⚠️ El importador lee el formato histórico de tus planillas (G 2021, G 2022, Y 2023…). Antes de importar, revisa la vista previa. Los registros duplicados (misma fecha + apoderado) se omiten automáticamente.</div>
+        <div class="alert alert-warn" style="align-items:flex-start;flex-direction:column;gap:6px">
+          <div>⚠️ El importador lee el formato histórico de tus planillas (<strong>G 2021, G 2022, Y 2023…</strong>). Antes de importar revisa la vista previa. Los duplicados (misma fecha + apoderado) se omiten automáticamente.</div>
+        </div>
+        
+        <!-- Tabla de columnas requeridas -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">📋 Estructura esperada del Excel</div>
+          <div style="overflow-x:auto;border:1px solid var(--border);border-radius:8px">
+            <table style="width:100%;font-size:11px;border-collapse:collapse">
+              <thead>
+                <tr style="background:var(--bg)">
+                  <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700;white-space:nowrap">Columna Excel</th>
+                  <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700">Nombres aceptados</th>
+                  <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700">Ejemplo</th>
+                  <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700">Obligatorio</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:6px 10px;font-weight:700">📅 Fecha</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>FECHA</code></td>
+                  <td style="padding:6px 10px">2025-06-15 / 15/06/2025</td>
+                  <td style="padding:6px 10px;text-align:center"><span style="color:var(--coral);font-weight:700">✱ Sí</span></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
+                  <td style="padding:6px 10px;font-weight:700">📅 Día</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>DIA</code></td>
+                  <td style="padding:6px 10px">SABADO / VIERNES</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:6px 10px;font-weight:700">⏰ Horario / Plan</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>HORARIO/TIPO</code> · <code>TIPO Y HORARIO</code></td>
+                  <td style="padding:6px 10px">AM A · PM B · PASEO PM</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
+                  <td style="padding:6px 10px;font-weight:700">🎂 Cumpleañer@</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>CUMPLEAÑERO</code> · <code>CUMPLEAÑER@</code></td>
+                  <td style="padding:6px 10px">Sofía / Martín</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:6px 10px;font-weight:700">👤 Apoderado</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>APODERADO</code> · <code>MAMA/PAPA</code></td>
+                  <td style="padding:6px 10px">Carolina García</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
+                  <td style="padding:6px 10px;font-weight:700">📞 Teléfono</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>FONO</code> · <code>TELEFONO</code></td>
+                  <td style="padding:6px 10px">987654321</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:6px 10px;font-weight:700">💰 Monto</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>MONTO</code> · <code>PAGO</code></td>
+                  <td style="padding:6px 10px">280000</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
+                  <td style="padding:6px 10px;font-weight:700">🏦 Banco / Pago</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>BANCO</code> · <code>DETALLE</code></td>
+                  <td style="padding:6px 10px">Santander 15/6</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:6px 10px;font-weight:700">🧾 Boleta</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>BOLETA</code></td>
+                  <td style="padding:6px 10px">42 / X</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:#fafafa">
+                  <td style="padding:6px 10px;font-weight:700">🎨 Invitación</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>INVITACION</code> · <code>INV</code></td>
+                  <td style="padding:6px 10px">Frozen / Paw Patrol</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:6px 10px;font-weight:700">👩 Cobrador</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>A:</code> · <code>COBRADOR</code></td>
+                  <td style="padding:6px 10px">Claudia / Leray</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 10px;font-weight:700">📝 Observaciones</td>
+                  <td style="padding:6px 10px;color:var(--text-muted)"><code>OBSERVACIONES</code> · <code>OBSERV</code></td>
+                  <td style="padding:6px 10px">No se celebró / Abono</td>
+                  <td style="padding:6px 10px;text-align:center;color:var(--text-muted)">No</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:6px">💡 El importador detecta automáticamente la fila de encabezados. El nombre de las hojas debe comenzar con <strong>G</strong> para Girasoles o <strong>Y</strong> para Yelou (ej: G 2024, G2025, Y 2023).</div>
+        </div>
         
         <!-- Zona de arrastre -->
         <div class="import-zone" id="import-zone" onclick="document.getElementById('file-input').click()">
@@ -447,6 +579,52 @@ textarea { resize: vertical; min-height: 60px; }
   </div>
 </div>
 
+
+<!-- MODAL NUEVO PAGO -->
+<div class="modal-overlay hidden" id="modal-pago">
+  <div class="modal">
+    <div class="modal-header" style="background:var(--grass)">
+      <span class="modal-title" id="modal-p-title">💳 Registrar Pago</span>
+      <button class="modal-close" onclick="closePago()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warn" id="pago-reserva-info" style="margin-bottom:14px">
+        Selecciona la reserva o ingresa los datos manualmente.
+      </div>
+      <div class="form-section">Buscar reserva existente</div>
+      <div class="form-grid cols1" style="margin-bottom:14px">
+        <div class="field">
+          <label>Buscar por apoderado o cumpleañer@</label>
+          <input type="text" id="pago-buscar" placeholder="Escribe para buscar..." oninput="buscarParaPago()" autocomplete="off">
+          <div id="pago-sugerencias" style="display:none;border:1.5px solid var(--border);border-radius:7px;max-height:160px;overflow-y:auto;margin-top:4px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.08)"></div>
+        </div>
+      </div>
+      <div class="form-section">Datos de la reserva</div>
+      <div class="form-grid">
+        <div class="field"><label>Fecha reserva</label><input type="text" id="p-fecha-res" readonly placeholder="(de la reserva)"></div>
+        <div class="field"><label>Cumpleañer@ / Apoderado</label><input type="text" id="p-nombre" placeholder="Nombre"></div>
+        <div class="field"><label>Plan</label><input type="text" id="p-plan" placeholder="PM A, AM B..."></div>
+        <div class="field"><label>Monto total acordado (CLP)</label><input type="number" id="p-monto" placeholder="280000" step="1000" oninput="calcDiffPago()"></div>
+      </div>
+      <div class="form-section">Pago recibido</div>
+      <div class="form-grid cols3">
+        <div class="field"><label>Monto pagado (CLP) *</label><input type="number" id="p-pagado" placeholder="280000" step="1000" oninput="calcDiffPago()"></div>
+        <div class="field"><label>Banco / Medio *</label><input type="text" id="p-banco" placeholder="Santander 15/6"></div>
+        <div class="field"><label>Boleta N°</label><input type="text" id="p-boleta"></div>
+        <div class="field"><label>Cobrado por</label><input type="text" id="p-cobrador" placeholder="Claudia / Leray..."></div>
+        <div class="field"><label>Fecha de pago</label><input type="date" id="p-fecha-pago"></div>
+      </div>
+      <div id="pago-diff-info" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:4px"></div>
+      <div class="form-section" style="margin-top:12px">Observaciones</div>
+      <div class="form-grid cols1"><div class="field"><label>Observaciones</label><textarea id="p-obs" placeholder="Abono parcial, cambio de plan..."></textarea></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePago()">Cancelar</button>
+      <button class="btn btn-grass" onclick="guardarPago()">💳 Guardar pago</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL RESERVA -->
 <div class="modal-overlay hidden" id="modal-reserva">
   <div class="modal">
@@ -517,6 +695,7 @@ textarea { resize: vertical; min-height: 60px; }
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeVer()">Cerrar</button>
       <button class="btn btn-danger btn-sm" id="btn-del">🗑️ Eliminar</button>
+      <button class="btn btn-grass btn-sm" id="btn-pago">💳 Registrar Pago</button>
       <button class="btn btn-primary" id="btn-edit">✏️ Editar</button>
     </div>
   </div>
@@ -626,25 +805,58 @@ function renderDashboard(){
   else elP.innerHTML='<table><thead><tr><th>Fecha</th><th>Plan</th><th>Cumpleañer@</th><th>Apoderado</th><th>Monto</th><th>Estado</th></tr></thead><tbody>'+prox.map(r=>'<tr style="cursor:pointer" onclick="verReserva(\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'" title="Doble clic para editar"><td>'+fmtF(r.fecha)+'</td><td><span class="badge badge-gray">'+(r.plan||'–')+'</span></td><td><strong>'+(r.cumple||'–')+'</strong></td><td>'+(r.apoderado||'–')+'</td><td>'+fmtM(r.monto)+'</td><td>'+(pend(r)>0?'<span class="badge badge-coral">Pend.'+fmtM(pend(r))+'</span>':'<span class="badge badge-grass">✓ Pagado</span>')+'</td></tr>').join('')+'</tbody></table>';
 }
 
+function getCalClass(r){
+  const p=(r.plan||'').toUpperCase().trim();
+  const t=getTipo(r);
+  if(t==='paseo')return'paseo';
+  const isAM=p.startsWith('AM')||p.includes(' AM');
+  const isPM=p.startsWith('PM')||p.includes(' PM');
+  const isB=p.endsWith('B')||p.includes(' B ');
+  if(isAM&&isB)return'am-b';
+  if(isAM)return'am-a';
+  if(isPM&&isB)return'pm-b';
+  if(isPM)return'pm-a';
+  // fallback por palabras clave históricas
+  const pl=(r.plan||'').toLowerCase();
+  if(pl.includes('premium')||pl.includes('grande'))return isPM||!isAM?'pm-b':'am-b';
+  if(pl.includes('basic')||pl.includes('basico'))return isPM||!isAM?'pm-a':'am-a';
+  return'otro';
+}
 function calNav(d){S.calM+=d;if(S.calM>11){S.calM=0;S.calY++;}if(S.calM<0){S.calM=11;S.calY--;}renderCalendario();}
 function renderCalendario(){
-  const y=S.calY,m=S.calM;document.getElementById('cal-label').textContent=MESES[m]+' '+y;
+  const y=S.calY,m=S.calM;
+  document.getElementById('cal-label').textContent=MESES[m]+' '+y;
   const all=S.anioFiltro?S.reservas.filter(r=>new Date(r.fecha).getFullYear()==S.anioFiltro):S.reservas;
-  const pd=new Date(y,m,1).getDay();const dm=new Date(y,m+1,0).getDate();
+  const pd=new Date(y,m,1).getDay();
+  const dm=new Date(y,m+1,0).getDate();
   const hoy=new Date();hoy.setHours(0,0,0,0);
   const DOW=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   let h=DOW.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
   for(let i=0;i<pd;i++){const dd=new Date(y,m,1-pd+i);h+='<div class="cal-cell other-month"><div class="cal-day">'+dd.getDate()+'</div></div>';}
   for(let d=1;d<=dm;d++){
-    const f=new Date(y,m,d);f.setHours(0,0,0,0);const iso=isoDate(f);const isH=f.getTime()===hoy.getTime();
+    const f=new Date(y,m,d);f.setHours(0,0,0,0);
+    const iso=isoDate(f);
+    const isH=f.getTime()===hoy.getTime();
     const evs=all.filter(r=>isoDate(r.fecha)===iso);
+    const paseos=evs.filter(r=>getTipo(r)==='paseo');
+    const ams=evs.filter(r=>getTipo(r)!=='paseo'&&(r.plan||'').toUpperCase().startsWith('AM'));
+    const pms=evs.filter(r=>getTipo(r)!=='paseo'&&(r.plan||'').toUpperCase().startsWith('PM'));
+    const otros=evs.filter(r=>getTipo(r)!=='paseo'&&!ams.includes(r)&&!pms.includes(r));
+    const ordered=[...paseos,...ams,...pms,...otros];
     h+='<div class="cal-cell'+(isH?' today':'')+'" onclick="calClick(\''+iso+'\')">';
-    h+='<div class="cal-day" style="'+(isH?'color:var(--primary-dark);font-weight:800':'')+'">' +d+'</div>';
-    evs.slice(0,3).forEach(r=>{h+='<div class="cal-ev'+(getTipo(r)==='paseo'?' paseo':'')+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')">'+(r.plan||'')+' '+(r.cumple||r.apoderado||'')+'</div>';});
-    if(evs.length>3)h+='<div style="font-size:9px;color:var(--text-muted)">+'+(evs.length-3)+' más</div>';
+    h+='<div class="cal-day">'+(isH?'<span style="background:var(--primary);color:var(--primary-text);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px">'+d+'</span>':d)+'</div>';
+    ordered.slice(0,4).forEach(function(r){
+      var cls=getCalClass(r);
+      var lbl=(r.plan||'').replace('PASEO','Paseo').replace('AM ','').replace('PM ','').trim();
+      var nom=(r.cumple||r.apoderado||'').substring(0,9);
+      h+='<div class="cal-ev '+cls+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')" title="'+(r.plan||'')+': '+(r.cumple||r.apoderado||'')+'">';
+      h+=lbl+(nom?' '+nom:'')+' </div>';
+    });
+    if(evs.length>4)h+='<div style="font-size:9px;color:var(--text-muted);padding:1px 4px;cursor:pointer" onclick="event.stopPropagation();calClick(\''+iso+'\')">+'+(evs.length-4)+' más</div>';
     h+='</div>';
   }
-  const resto=(pd+dm)%7;if(resto!==0)for(let i=1;i<=7-resto;i++)h+='<div class="cal-cell other-month"><div class="cal-day">'+i+'</div></div>';
+  const resto=(pd+dm)%7;
+  if(resto!==0)for(let i=1;i<=7-resto;i++)h+='<div class="cal-cell other-month"><div class="cal-day">'+i+'</div></div>';
   document.getElementById('cal-grid').innerHTML=h;
 }
 function calClick(iso){document.getElementById('r-fecha').value=iso;updateDia();openNueva();}
@@ -868,6 +1080,7 @@ function verReserva(id){
   document.getElementById('ver-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px"><div><div class="form-section">Fecha y plan</div><p style="font-size:13px"><strong>'+(r.dia||'')+' '+fmtF(r.fecha)+'</strong></p><p style="font-size:12px;color:var(--text-muted);margin-top:3px">'+(r.plan||'')+' · '+(r.tipo||'')+'</p></div><div><div class="form-section">Cumpleañer@ / Apoderado</div><p style="font-size:15px;font-weight:800">'+(r.cumple||'–')+'</p><p style="font-size:12px;margin-top:2px">👤 '+(r.apoderado||'–')+' · 📞 '+(r.fono||'–')+'</p>'+(r.inv?'<p style="margin-top:6px"><span class="inv-tag">🎨 '+r.inv+'</span></p>':'')+'</div></div><div class="form-section">Pago</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"><div class="stat-card"><div class="label">Acordado</div><div class="value" style="font-size:18px">'+fmtM(r.monto)+'</div></div><div class="stat-card sky"><div class="label">Pagado</div><div class="value" style="font-size:18px">'+fmtM(r.pagado)+'</div></div><div class="stat-card '+(p>0?'coral':'grass')+'"><div class="label">'+(p>0?'Saldo pendiente':'✓ Al día')+'</div><div class="value" style="font-size:18px">'+(p>0?fmtM(p):'$0')+'</div></div></div><p style="font-size:12px;color:var(--text-muted)">Banco: <strong>'+(r.banco||'–')+'</strong> · Boleta: <strong>'+(r.boleta?'#'+r.boleta:'–')+'</strong> · Cobrador: <strong>'+(r.cobrador||'–')+'</strong></p>'+(r.obs?'<div class="alert alert-warn" style="margin-top:12px">📝 '+r.obs+'</div>':'');
   document.getElementById('btn-edit').onclick=function(){closeVer();openNueva(r);};
   document.getElementById('btn-del').onclick=function(){closeVer();eliminarR(id);};
+  document.getElementById('btn-pago').onclick=function(){closeVer();openNuevoPago(id);};
   document.getElementById('modal-ver').classList.remove('hidden');
 }
 function closeVer(){document.getElementById('modal-ver').classList.add('hidden');}
@@ -902,6 +1115,154 @@ function exportCSV(){
   const rows=rs.map(r=>[fmtF(r.fecha),r.dia||'',r.plan||'',r.tipo||'',r.cumple||'',r.apoderado||'',r.fono||'',r.monto||0,r.pagado||0,pend(r),r.banco||'',r.boleta||'',r.inv||'',r.cobrador||'',r.obs||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
   const csv=[cols.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download=COLLECTION+'_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+}
+
+
+// ── NUEVO PAGO ───────────────────────────────────────────
+let pagoReservaId = null;
+
+function openNuevoPago(reservaId) {
+  pagoReservaId = reservaId || null;
+  document.getElementById('p-fecha-pago').value = isoDate(new Date());
+  document.getElementById('pago-buscar').value = '';
+  document.getElementById('pago-sugerencias').style.display = 'none';
+  document.getElementById('pago-diff-info').style.display = 'none';
+  
+  if (reservaId) {
+    const r = S.reservas.find(x => x.id === reservaId);
+    if (r) fillPagoFromReserva(r);
+  } else {
+    // Limpiar campos
+    ['p-fecha-res','p-nombre','p-plan','p-monto','p-pagado','p-banco','p-boleta','p-cobrador','p-obs'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = '';
+    });
+    document.getElementById('pago-reserva-info').textContent = 'Busca una reserva existente o ingresa los datos manualmente.';
+  }
+  document.getElementById('modal-pago').classList.remove('hidden');
+}
+
+function fillPagoFromReserva(r) {
+  pagoReservaId = r.id;
+  document.getElementById('p-fecha-res').value = fmtF(r.fecha);
+  document.getElementById('p-nombre').value = (r.cumple ? r.cumple + ' — ' : '') + (r.apoderado || '');
+  document.getElementById('p-plan').value = r.plan || '';
+  document.getElementById('p-monto').value = r.monto || '';
+  const saldo = pend(r);
+  document.getElementById('p-pagado').value = saldo > 0 ? saldo : (r.monto || '');
+  document.getElementById('p-cobrador').value = r.cobrador || '';
+  const info = document.getElementById('pago-reserva-info');
+  info.className = saldo > 0 ? 'alert alert-warn' : 'alert alert-success';
+  info.innerHTML = saldo > 0
+    ? '⚠️ Saldo pendiente: <strong>' + fmtM(saldo) + '</strong> de un total de ' + fmtM(r.monto)
+    : '✅ Esta reserva ya está pagada en su totalidad (' + fmtM(r.monto) + ')';
+  document.getElementById('pago-sugerencias').style.display = 'none';
+  calcDiffPago();
+}
+
+function buscarParaPago() {
+  const q = (document.getElementById('pago-buscar').value || '').toLowerCase().trim();
+  const sug = document.getElementById('pago-sugerencias');
+  if (q.length < 2) { sug.style.display = 'none'; return; }
+  const matches = S.reservas.filter(function(r) {
+    return (r.cumple || '').toLowerCase().includes(q) || (r.apoderado || '').toLowerCase().includes(q);
+  }).slice(0, 8);
+  if (!matches.length) { sug.style.display = 'none'; return; }
+  sug.style.display = '';
+  sug.innerHTML = matches.map(function(r) {
+    const s = pend(r);
+    return '<div class="pago-sug-item" data-rid="' + r.id + '">' +
+      '<strong>' + (r.cumple || '(sin nombre)') + '</strong> — ' + (r.apoderado || '') +
+      ' <span style="color:var(--text-muted);font-size:10px">' + fmtF(r.fecha) + ' · ' + (r.plan || '') + '</span>' +
+      (s > 0 ? ' <span style="color:var(--coral);font-size:10px;font-weight:700"> Saldo: ' + fmtM(s) + '</span>' : ' <span style="color:var(--grass);font-size:10px"> ✓ Pagado</span>') +
+      '</div>';
+  }).join('');
+  // Agregar listeners con JS (evitar onmouseover/onclick inline problemáticos)
+  sug.querySelectorAll('.pago-sug-item').forEach(function(el) {
+    el.addEventListener('click', function() {
+      const rid = el.dataset.rid;
+      const r = S.reservas.find(function(x) { return x.id === rid; });
+      if (r) fillPagoFromReserva(r);
+    });
+  });
+}
+function calcDiffPago() {
+  const monto = Number(document.getElementById('p-monto').value) || 0;
+  const pagado = Number(document.getElementById('p-pagado').value) || 0;
+  const el = document.getElementById('pago-diff-info');
+  if (!monto || !pagado) { el.style.display = 'none'; return; }
+  const diff = monto - pagado;
+  el.style.display = '';
+  if (diff > 0) {
+    el.style.background = 'var(--coral-light)'; el.style.color = 'var(--coral)';
+    el.innerHTML = '⚠️ Quedaría un saldo pendiente de <strong>' + fmtM(diff) + '</strong>';
+  } else if (diff === 0) {
+    el.style.background = 'var(--grass-light)'; el.style.color = 'var(--grass)';
+    el.innerHTML = '✅ Pago completo — sin saldo pendiente';
+  } else {
+    el.style.background = 'var(--sky-light)'; el.style.color = 'var(--sky)';
+    el.innerHTML = 'ℹ️ El pago supera el monto acordado en <strong>' + fmtM(Math.abs(diff)) + '</strong>';
+  }
+}
+
+async function guardarPago() {
+  const pagado = Number(document.getElementById('p-pagado').value) || 0;
+  const banco = document.getElementById('p-banco').value.trim();
+  if (!pagado) { alert('Ingresa el monto pagado'); return; }
+  if (!banco) { alert('Ingresa el banco o medio de pago'); return; }
+  
+  // Si hay reserva vinculada, actualizar sus campos de pago
+  if (pagoReservaId) {
+    const r = S.reservas.find(x => x.id === pagoReservaId);
+    if (r) {
+      const nuevoPagado = (Number(r.pagado) || 0) + pagado;
+      const updates = {
+        pagado: nuevoPagado,
+        banco: banco,
+        boleta: document.getElementById('p-boleta').value.trim() || r.boleta || '',
+        cobrador: document.getElementById('p-cobrador').value.trim() || r.cobrador || '',
+        obs: [r.obs, document.getElementById('p-obs').value.trim()].filter(Boolean).join(' | '),
+        updatedAt: new Date()
+      };
+      try {
+        if (S.useFirebase) {
+          await S.db.collection(COLLECTION).doc(pagoReservaId).update({
+            ...updates,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+        Object.assign(r, updates);
+      } catch(e) { Object.assign(r, updates); }
+    }
+  } else {
+    // Pago standalone: crear como nueva reserva con tipo "pago"
+    const data = {
+      fecha: new Date(document.getElementById('p-fecha-pago').value + 'T12:00:00'),
+      cumple: '', apoderado: document.getElementById('p-nombre').value.trim(),
+      plan: document.getElementById('p-plan').value.trim(), tipo: 'pago',
+      monto: Number(document.getElementById('p-monto').value) || pagado,
+      pagado, banco,
+      boleta: document.getElementById('p-boleta').value.trim(),
+      cobrador: document.getElementById('p-cobrador').value.trim(),
+      obs: document.getElementById('p-obs').value.trim(),
+      dia: '', createdAt: new Date()
+    };
+    try {
+      if (S.useFirebase) {
+        const ref = await S.db.collection(COLLECTION).add({...data, fecha: firebase.firestore.Timestamp.fromDate(data.fecha), createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+        data.id = ref.id;
+      } else { data.id = 'pago_' + Date.now(); }
+      S.reservas.unshift(data);
+    } catch(e) { data.id = 'pago_' + Date.now(); S.reservas.unshift(data); }
+  }
+  
+  closePago();
+  populateAnios();
+  renderAll();
+}
+
+function closePago() {
+  document.getElementById('modal-pago').classList.add('hidden');
+  pagoReservaId = null;
 }
 
 initFirebase();
