@@ -215,6 +215,8 @@ thead th.th-check{width:36px;text-align:center;padding:8px 6px}
 tbody td.td-check{text-align:center;padding:8px 6px}
 tbody tr.selected{background:var(--coral-light) !important}
 
+
+.row-pend-indicator { border-left: 3px solid var(--coral) !important; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -305,7 +307,7 @@ tbody tr.selected{background:var(--coral-light) !important}
       <div class="stat-card primary"><div class="label">Reservas este mes</div><div class="value" id="s-mes">–</div><div class="sub">Cumpleaños + paseos</div></div>
       <div class="stat-card grass"><div class="label">Recaudado mes</div><div class="value" id="s-monto">–</div><div class="sub">CLP cobrado</div></div>
       <div class="stat-card sky"><div class="label">Reservas hoy</div><div class="value" id="s-hoy">–</div><div class="sub">AM y PM</div></div>
-      <div class="stat-card coral"><div class="label">Saldo pendiente</div><div class="value" id="s-pend">–</div><div class="sub">Sin cobrar</div></div>
+      <div class="stat-card coral" ondblclick="verListaPendientes()" title="Doble clic para ver el listado" style="cursor:pointer"><div class="label">Saldo pendiente <span style="font-size:9px;opacity:0.6">(doble clic)</span></div><div class="value" id="s-pend">–</div><div class="sub">Sin cobrar</div></div>
     </div>
     <div id="dash-pendbar"></div>
     <div class="card">
@@ -329,9 +331,13 @@ tbody tr.selected{background:var(--coral-light) !important}
       <button class="cal-btn" onclick="calNav(1)">›</button>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
-    <div style="margin-top:10px;display:flex;gap:14px;font-size:11px;color:var(--text-muted)">
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--primary-light);border-radius:2px;border:1px solid var(--primary-dark);display:inline-block"></span>Cumpleaños</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--grass-light);border-radius:2px;border:1px solid var(--grass);display:inline-block"></span>Paseo de curso</span>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;font-size:10.5px;color:var(--text-muted);align-items:center">
+      <span style="font-weight:700;color:var(--navy);margin-right:2px">Leyenda:</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#DBEAFE;border-radius:2px;border-left:3px solid #3B82F6;display:inline-block"></span>AM — A (Normal mañana)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#BFDBFE;border-radius:2px;border-left:3px solid #1D4ED8;display:inline-block"></span>AM — B (Grande mañana)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#FEF3C7;border-radius:2px;border-left:3px solid #F59E0B;display:inline-block"></span>PM — A (Normal tarde)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#FDE68A;border-radius:2px;border-left:3px solid #D97706;display:inline-block"></span>PM — B (Grande tarde)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:12px;background:#D1FAE5;border-radius:2px;border-left:3px solid #10B981;display:inline-block"></span>Paseo (día completo)</span>
     </div>
   </div>
 
@@ -723,7 +729,8 @@ function renderDashboard(){
 
 function calNav(d){S.calM+=d;if(S.calM>11){S.calM=0;S.calY++;}if(S.calM<0){S.calM=11;S.calY--;}renderCalendario();}
 function renderCalendario(){
-  const y=S.calY,m=S.calM;document.getElementById('cal-label').textContent=MESES[m]+' '+y;
+  const y=S.calY,m=S.calM;
+  document.getElementById('cal-label').textContent=MESES[m]+' '+y;
   const all=S.anioFiltro?S.reservas.filter(r=>new Date(r.fecha).getFullYear()==S.anioFiltro):S.reservas;
   const pd=new Date(y,m,1).getDay();const dm=new Date(y,m+1,0).getDate();
   const hoy=new Date();hoy.setHours(0,0,0,0);
@@ -731,12 +738,24 @@ function renderCalendario(){
   let h=DOW.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
   for(let i=0;i<pd;i++){const dd=new Date(y,m,1-pd+i);h+='<div class="cal-cell other-month"><div class="cal-day">'+dd.getDate()+'</div></div>';}
   for(let d=1;d<=dm;d++){
-    const f=new Date(y,m,d);f.setHours(0,0,0,0);const iso=isoDate(f);const isH=f.getTime()===hoy.getTime();
+    const f=new Date(y,m,d);f.setHours(0,0,0,0);
+    const iso=isoDate(f);const isH=f.getTime()===hoy.getTime();
     const evs=all.filter(r=>isoDate(r.fecha)===iso);
+    const paseos=evs.filter(r=>getTipo(r)==='paseo');
+    const ams=evs.filter(r=>getTipo(r)!=='paseo'&&(r.plan||'').toUpperCase().startsWith('AM'));
+    const pms=evs.filter(r=>getTipo(r)!=='paseo'&&(r.plan||'').toUpperCase().startsWith('PM'));
+    const otros=evs.filter(r=>getTipo(r)!=='paseo'&&!ams.includes(r)&&!pms.includes(r));
+    const ordered=[...paseos,...ams,...pms,...otros];
     h+='<div class="cal-cell'+(isH?' today':'')+'" onclick="calClick(\''+iso+'\')">';
-    h+='<div class="cal-day" style="'+(isH?'color:var(--primary-dark);font-weight:800':'')+'">' +d+'</div>';
-    evs.slice(0,3).forEach(r=>{h+='<div class="cal-ev'+(getTipo(r)==='paseo'?' paseo':'')+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')">'+(r.plan||'')+' '+(r.cumple||r.apoderado||'')+'</div>';});
-    if(evs.length>3)h+='<div style="font-size:9px;color:var(--text-muted)">+'+(evs.length-3)+' más</div>';
+    h+='<div class="cal-day">'+(isH?'<span style="background:var(--primary);color:var(--primary-text);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px">'+d+'</span>':d)+'</div>';
+    ordered.slice(0,4).forEach(function(r){
+      var cls=getCalClass(r);
+      var lbl=(r.plan||'').replace('PASEO','Paseo').replace('AM ','').replace('PM ','').trim();
+      var nom=(r.cumple||r.apoderado||'').substring(0,9);
+      h+='<div class="cal-ev '+cls+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')" title="'+(r.plan||'')+': '+(r.cumple||r.apoderado||'')+'">';
+      h+=lbl+(nom?' '+nom:'')+' </div>';
+    });
+    if(evs.length>4)h+='<div style="font-size:9px;color:var(--text-muted);padding:1px 4px;cursor:pointer" onclick="event.stopPropagation();calClick(\''+iso+'\')">+'+(evs.length-4)+' más</div>';
     h+='</div>';
   }
   const resto=(pd+dm)%7;if(resto!==0)for(let i=1;i<=7-resto;i++)h+='<div class="cal-cell other-month"><div class="cal-day">'+i+'</div></div>';
@@ -769,7 +788,7 @@ function renderSeg(){
   if(bar)bar.classList.remove('visible');
   tbody.innerHTML=rs.map(r=>{
     const p=pend(r);
-    return '<tr data-rid="'+r.id+'" onclick="onRowClick(event,\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))" style="cursor:pointer">'+
+    return '<tr data-rid="'+r.id+'" onclick="onRowClick(event,\''+r.id+'\')" ondblclick="openNueva(S.reservas.find(x=>x.id===\''+r.id+'\'))" style="cursor:pointer'+(p>0?';border-left:3px solid var(--coral)':'')+'">'+
       '<td class="td-check" onclick="event.stopPropagation()"><input type="checkbox" class="seg-check row-check" data-rid="'+r.id+'" onchange="onCheckRow()"></td>'+
       '<td style="white-space:nowrap"><strong>'+fmtF(r.fecha)+'</strong></td>'+
       '<td style="font-size:11px;color:var(--text-muted)">'+(r.dia||DIAS_FULL[new Date(r.fecha).getDay()]||'')+'</td>'+
@@ -778,7 +797,7 @@ function renderSeg(){
       '<td>'+(r.apoderado||'–')+'</td>'+
       '<td style="color:var(--text-muted);font-size:11px">'+(r.fono||'–')+'</td>'+
       '<td><strong>'+fmtM(r.monto)+'</strong></td>'+
-      '<td style="color:var(--grass)">'+fmtM(r.pagado)+'</td>'+
+      '<td style="color:'+(p>0?'var(--coral)':'var(--grass)')+';font-weight:'+(p>0?'700':'400')+'">'+fmtM(r.pagado)+(p>0?' <span style="font-size:9px;background:var(--coral);color:#fff;border-radius:10px;padding:1px 5px;margin-left:2px">-'+fmtM(p)+'</span>':'')+'</td>'+
       '<td style="font-size:11px">'+(r.banco||'–')+'</td>'+
       '<td>'+(r.boleta?'<span class="badge badge-sky">#'+r.boleta+'</span>':'–')+'</td>'+
       '<td>'+(r.inv?'<span class="inv-tag">'+r.inv+'</span>':'–')+'</td>'+
@@ -1160,6 +1179,21 @@ function irAPagoDesdeReserva(){
   var apoderado=document.getElementById('r-apoderado').value.trim();
   if(!apoderado){alert('Completa al menos el nombre del Apoderado antes de ir a Pagos.');return;}
   guardar().then(function(){closeModal();setTimeout(function(){if(S.reservas.length>0)openNuevoPago(S.reservas[0].id);else openNuevoPago();},300);}).catch(function(){closeModal();openNuevoPago();});
+}
+
+
+function verListaPendientes(){
+  const conPend=S.reservas.filter(r=>pend(r)>0).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  if(!conPend.length){alert('No hay reservas con saldo pendiente ✅');return;}
+  // Ir a seguimiento con filtro pendiente
+  showPanel('seguimiento',document.querySelector('[data-panel="seguimiento"]'));
+  document.getElementById('f-pago').value='pend';
+  renderSeg();
+  // Scroll suave a la tabla
+  setTimeout(function(){
+    var el=document.getElementById('panel-seguimiento');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+  },100);
 }
 
 initFirebase();
