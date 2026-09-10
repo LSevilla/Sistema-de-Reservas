@@ -134,54 +134,60 @@ textarea { resize: vertical; min-height: 60px; }
 /* ── CALENDARIO REDISEÑADO v2 ──────────────────────────── */
 /* ── CALENDARIO ─────────────────────────────────────────── */
 /* ── CALENDARIO LIMPIO CON TOOLTIP ─── */
+/* ── CALENDARIO v4 ─────────────────────────────────────── */
 .cal-nav-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:var(--navy);color:#fff;border-radius:var(--radius) var(--radius) 0 0}
 .cal-btn{background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;font-size:18px;padding:2px 12px;border-radius:5px;line-height:1.6}
 .cal-btn:hover{background:rgba(255,255,255,0.2)}
 .cal-month{font-size:15px;font-weight:700}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-top:none;background:var(--white);border-radius:0 0 var(--radius) var(--radius);overflow:hidden;grid-auto-rows:minmax(0,1fr)}
-.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 3px;background:#fafafa;border-bottom:1px solid var(--border)}
-.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;display:flex;flex-direction:column;background:#fff;min-height:90px;overflow:visible;position:relative}
+.cal-wrap{display:flex;flex-direction:column;height:calc(100vh - 105px)}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-top:none;background:#fafafa}
+.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 3px;border-right:1px solid var(--border)}
+.cal-dow:last-child{border-right:none}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(0,1fr);border:1px solid var(--border);border-top:none;background:var(--white);border-radius:0 0 var(--radius) var(--radius);overflow:hidden;flex:1}
+/* Celda día */
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;display:flex;flex-direction:column;background:#fff;overflow:hidden;position:relative}
 .cal-cell:nth-child(7n){border-right:none}
 .cal-cell:hover{background:#f9fbff}
-.cal-cell.other-month{background:#fafafa}
+.cal-cell.other-month{background:#f7f7f7}
 .cal-cell.other-month .cal-day-num{color:#ccc}
+.cal-cell.today .cal-day-num span{background:var(--primary);color:#fff;border-radius:50%;display:inline-flex;width:19px;height:19px;align-items:center;justify-content:center}
+/* Número del día */
+.cal-day-num{font-size:10px;font-weight:700;color:#bbb;padding:3px 5px 1px;line-height:1;flex-shrink:0}
 .cal-cell.today .cal-day-num{color:var(--primary-dark)}
-.cal-day-num{font-size:11px;font-weight:700;color:#aaa;padding:4px 6px 2px;line-height:1;flex-shrink:0}
-.today-dot{display:inline-flex;background:var(--primary);color:#fff;border-radius:50%;width:19px;height:19px;align-items:center;justify-content:center;font-size:10px;font-weight:800}
-/* Separador visual AM/PM solo cuando hay eventos */
-.cal-slots{flex:1;display:flex;flex-direction:column;gap:1px;padding:0 2px 2px}
-.cal-slot{display:flex;flex-direction:column;gap:1px}
-.cal-slot.slot-empty{display:none}
-/* Chip compacto del evento */
-.cev{border-radius:4px;padding:2px 5px;cursor:pointer;border-left:2px solid transparent;transition:filter .12s;position:relative;display:flex;align-items:center;gap:4px;min-width:0}
-.cev:hover{filter:brightness(.92)}
-.cev:hover .cev-tooltip{display:block}
+/* Franjas AM / PM */
+.cal-slots{flex:1;display:flex;flex-direction:column;min-height:0}
+.cal-slot{display:flex;flex-direction:column;flex:1;min-height:0;border-top:1px solid rgba(0,0,0,0.05);padding:1px 2px 2px;overflow:hidden;position:relative}
+.cal-slot.slot-am{background:rgba(219,234,254,0.18)}
+.cal-slot.slot-pm{background:rgba(254,243,199,0.18)}
+.cal-slot.slot-empty{flex:0 0 4px;padding:0;border-top:1px solid rgba(0,0,0,0.04)}
+.cal-slot-lbl{font-size:7.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:1px 3px;opacity:.5;line-height:1.2;flex-shrink:0}
+.cal-slot.slot-am .cal-slot-lbl{color:#1D4ED8}
+.cal-slot.slot-pm .cal-slot-lbl{color:#B45309}
+.cal-slot.slot-paseo{background:rgba(209,250,229,0.22);flex:1}
+/* Chip del evento */
+.cev{border-radius:4px;padding:2px 5px;cursor:pointer;border-left:2px solid transparent;display:flex;align-items:center;gap:3px;min-width:0;flex-shrink:0;margin:1px 0;position:relative}
+.cev:hover .cev-tip{display:flex}
 .cev.am-a{background:#DBEAFE;border-color:#3B82F6}
 .cev.am-b{background:#BFDBFE;border-color:#1D4ED8}
 .cev.pm-a{background:#FEF3C7;border-color:#F59E0B}
 .cev.pm-b{background:#FDE68A;border-color:#D97706}
 .cev.paseo{background:#D1FAE5;border-color:#10B981}
 .cev.otro{background:#F3F4F6;border-color:#9CA3AF}
-.cev-label{font-size:9px;font-weight:700;opacity:.55;flex-shrink:0;text-transform:uppercase;letter-spacing:.2px}
-.cev-name{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
-.cev-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.cev.am-a .cev-dot,.cev.am-b .cev-dot{background:#3B82F6}
-.cev.pm-a .cev-dot,.cev.pm-b .cev-dot{background:#F59E0B}
-.cev.paseo .cev-dot{background:#10B981}
-/* Señal de saldo pendiente */
-.cev.pend-flag::after{content:"⚠";font-size:8px;position:absolute;right:3px;top:1px;opacity:.7}
-/* Tooltip */
-.cev-tooltip{display:none;position:absolute;left:calc(100% + 6px);top:0;z-index:500;background:#1A2B4A;color:#fff;border-radius:8px;padding:10px 13px;min-width:200px;max-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;white-space:normal;line-height:1.5}
-.cev:last-child .cev-tooltip,.cev-tooltip.tip-left{left:auto;right:calc(100% + 6px)}
-.cev-tooltip::before{content:'';position:absolute;left:-5px;top:10px;border:5px solid transparent;border-right-color:#1A2B4A;border-left:none}
-.cev-tooltip.tip-left::before{left:auto;right:-5px;border-right:none;border-left:5px solid #1A2B4A}
-.tt-plan{font-size:10px;font-weight:700;opacity:.55;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-.tt-nombre{font-size:14px;font-weight:800;margin-bottom:5px}
-.tt-row{font-size:11px;opacity:.75;display:flex;align-items:center;gap:5px;margin-bottom:2px}
-.tt-divider{border-top:1px solid rgba(255,255,255,.15);margin:6px 0}
-.tt-status{font-size:11px;font-weight:700}
-.tt-status.ok{color:#6EE7B7}
-.tt-status.pend{color:#FCD34D}
+.cev-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:currentColor;opacity:.6}
+.cev.am-a .cev-dot,.cev.am-b .cev-dot{color:#3B82F6}
+.cev.pm-a .cev-dot,.cev.pm-b .cev-dot{color:#F59E0B}
+.cev.paseo .cev-dot{color:#10B981}
+.cev-name{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.cev-warn{font-size:8px;flex-shrink:0;opacity:.7}
+/* Tooltip: siempre visible completo, sale del flujo */
+.cev-tip{display:none;position:fixed;z-index:9999;background:#1A2B4A;color:#fff;border-radius:10px;padding:11px 14px;min-width:210px;max-width:270px;box-shadow:0 10px 30px rgba(0,0,0,.3);flex-direction:column;gap:3px;pointer-events:none}
+.tip-plan{font-size:9px;font-weight:700;opacity:.5;text-transform:uppercase;letter-spacing:.5px}
+.tip-nombre{font-size:14px;font-weight:800;margin:2px 0 5px}
+.tip-row{font-size:11px;opacity:.75;display:flex;align-items:center;gap:5px}
+.tip-div{border-top:1px solid rgba(255,255,255,.15);margin:6px 0 4px}
+.tip-st{font-size:11.5px;font-weight:700}
+.tip-st.ok{color:#6EE7B7}
+.tip-st.pend{color:#FCD34D}
 .import-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg); }
 .import-zone:hover, .import-zone.drag-over { border-color: var(--primary); background: var(--primary-light); }
 .import-zone .icon { font-size: 40px; display: block; margin-bottom: 12px; }
@@ -408,13 +414,15 @@ tbody tr.selected{background:var(--coral-light) !important}
 
   <!-- ═══ CALENDARIO ═══ -->
   <div id="panel-calendario" class="panel">
-    <div class="cal-nav-bar">
-      <button class="cal-btn" onclick="calNav(-1)">‹</button>
-      <div class="cal-month" id="cal-label">Junio 2026</div>
-      <button class="cal-btn" onclick="calNav(1)">›</button>
+    <div class="cal-wrap">
+      <div class="cal-nav-bar">
+        <button class="cal-btn" onclick="calNav(-1)">&#8249;</button>
+        <div class="cal-month" id="cal-label">Cargando...</div>
+        <button class="cal-btn" onclick="calNav(1)">&#8250;</button>
+      </div>
+      <div class="cal-dow-row" id="cal-dow-row"></div>
+      <div class="cal-grid" id="cal-grid"></div>
     </div>
-    <div class="cal-grid" id="cal-grid"></div>
-    
   </div>
 
   <!-- ═══ SEGUIMIENTO ═══ -->
@@ -813,86 +821,94 @@ function renderCalendario(){
   const dm=new Date(y,m+1,0).getDate();
   const hoy=new Date();hoy.setHours(0,0,0,0);
   const DOW=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  let h=DOW.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
 
-  // Chip compacto con tooltip
-  function chip(r,colIdx){
+  function chip(r){
     const cls=getCalClass(r);
     const sl=pend(r);
     const nombre=r.cumple||r.apoderado||'–';
-    const plan=(r.plan||'').replace('PASEO AM','Paseo AM').replace('PASEO PM','Paseo PM');
-    // Tooltip puede ir a izquierda si estamos en las últimas 2 columnas
-    const tipLeft=colIdx>=5;
-    const tooltip='<div class="cev-tooltip'+(tipLeft?' tip-left':'')+'">'
-      +'<div class="tt-plan">'+plan+'</div>'
-      +'<div class="tt-nombre">'+nombre+'</div>'
-      +(r.apoderado&&r.cumple?'<div class="tt-row">👤 '+r.apoderado+'</div>':'')
-      +(r.fono?'<div class="tt-row">📞 '+r.fono+'</div>':'')
-      +(r.inv?'<div class="tt-row">🎨 '+r.inv+'</div>':'')
-      +'<div class="tt-divider"></div>'
-      +'<div class="tt-status '+(sl>0?'pend':'ok')+'">'+(sl>0?'⚠ Saldo: '+fmtM(sl):'✓ Pagado')+'</div>'
-      +'</div>';
-    return '<div class="cev '+cls+(sl>0?' pend-flag':'')+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')">'
+    const plan=(r.plan||'').replace('PASEO ','Paseo ');
+    return '<div class="cev '+cls+(sl>0?' cev-pend':'')+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')"'
+      +' onmouseenter="showTip(event,this)" onmouseleave="hideTip()"'
+      +' data-plan="'+plan+'" data-nombre="'+nombre
+      +'" data-apod="'+(r.apoderado&&r.cumple?r.apoderado:'')+'" data-fono="'+(r.fono||'')+'" data-tema="'+(r.inv||'')+'" data-saldo="'+sl+'">'
       +'<span class="cev-dot"></span>'
       +'<span class="cev-name">'+nombre+'</span>'
-      +tooltip
+      +(sl>0?'<span class="cev-warn">⚠</span>':'')
       +'</div>';
   }
 
-  function cell(d,iso,other,isHoy,evs,colIdx){
+  function buildCell(d,iso,other,isHoy,evs){
     const paseos=evs.filter(r=>getTipo(r)==='paseo');
     const ams=evs.filter(r=>getTipo(r)!=='paseo'&&(r.plan||'').toUpperCase().startsWith('AM'));
     const pms=evs.filter(r=>getTipo(r)!=='paseo'&&!(r.plan||'').toUpperCase().startsWith('AM'));
-    const dayNum=isHoy?'<span class="today-dot">'+d+'</span>':d;
-    let out='<div class="cal-cell'+(other?' other-month':'')+(isHoy?' today':'')+'"'
-      +(iso?' onclick="calClick(\''+iso+'\')"':'')+' >';
+    const dayNum=isHoy?'<span>'+d+'</span>':d;
+    let out='<div class="cal-cell'+(other?' other-month':'')+(isHoy?' today':'')+'"'+(iso?' onclick="calClick(\''+iso+'\')"':'')+' >';
     out+='<div class="cal-day-num">'+dayNum+'</div>';
     out+='<div class="cal-slots">';
     if(paseos.length){
-      out+='<div class="cal-slot">';
-      paseos.forEach(function(r){out+=chip(r,colIdx);});
-      ams.concat(pms).forEach(function(r){out+=chip(r,colIdx);});
+      out+='<div class="cal-slot slot-paseo"><div class="cal-slot-lbl">🚌 Paseo</div>';
+      paseos.forEach(function(r){out+=chip(r);});
+      ams.concat(pms).forEach(function(r){out+=chip(r);});
       out+='</div>';
     } else {
-      if(ams.length){
-        out+='<div class="cal-slot">';
-        ams.forEach(function(r){out+=chip(r,colIdx);});
-        out+='</div>';
-      }
-      if(pms.length){
-        out+='<div class="cal-slot">';
-        pms.forEach(function(r){out+=chip(r,colIdx);});
-        out+='</div>';
-      }
+      // AM — siempre mostrar si hay eventos o si la otra franja tiene
+      var showAM=ams.length>0;
+      var showPM=pms.length>0;
+      out+='<div class="cal-slot slot-am'+(showAM?'':' slot-empty')+'">';
+      if(showAM){out+='<div class="cal-slot-lbl">AM</div>';ams.forEach(function(r){out+=chip(r);});}
+      out+='</div>';
+      out+='<div class="cal-slot slot-pm'+(showPM?'':' slot-empty')+'">';
+      if(showPM){out+='<div class="cal-slot-lbl">PM</div>';pms.forEach(function(r){out+=chip(r);});}
+      out+='</div>';
     }
     out+='</div></div>';
     return out;
   }
 
-  // Celdas anteriores
-  for(let i=0;i<pd;i++){
-    const dd=new Date(y,m,1-pd+i);
-    const col=(i)%7;
-    h+=cell(dd.getDate(),'',true,false,[],col);
-  }
-  // Días del mes
+  // DOW header
+  let dow='';DOW.forEach(function(d){dow+='<div class="cal-dow">'+d+'</div>';});
+  document.getElementById('cal-dow-row').innerHTML=dow;
+
+  let h='';
+  for(let i=0;i<pd;i++){const dd=new Date(y,m,1-pd+i);h+=buildCell(dd.getDate(),'',true,false,[]);}
   for(let d=1;d<=dm;d++){
     const f=new Date(y,m,d);f.setHours(0,0,0,0);
-    const iso=isoDate(f);
-    const isH=f.getTime()===hoy.getTime();
+    const iso=isoDate(f);const isH=f.getTime()===hoy.getTime();
     const evs=all.filter(r=>isoDate(r.fecha)===iso);
-    const col=(pd+d-1)%7;
-    h+=cell(d,iso,false,isH,evs,col);
+    h+=buildCell(d,iso,false,isH,evs);
   }
   const resto=(pd+dm)%7;
-  if(resto){
-    for(let i=1;i<=7-resto;i++){
-      const col=(pd+dm+i-1)%7;
-      h+=cell(i,'',true,false,[],col);
-    }
-  }
+  if(resto)for(let i=1;i<=7-resto;i++)h+=buildCell(i,'',true,false,[]);
   document.getElementById('cal-grid').innerHTML=h;
 }
+
+// Tooltip posicionado con JS para no salirse nunca de la pantalla
+var _tip=null;
+function showTip(e,el){
+  if(!_tip){_tip=document.createElement('div');_tip.className='cev-tip';document.body.appendChild(_tip);}
+  var plan=el.dataset.plan||'';var nombre=el.dataset.nombre||'';
+  var apod=el.dataset.apod||'';var fono=el.dataset.fono||'';
+  var tema=el.dataset.tema||'';var saldo=Number(el.dataset.saldo)||0;
+  _tip.innerHTML='<div class="tip-plan">'+plan+'</div>'
+    +'<div class="tip-nombre">'+nombre+'</div>'
+    +(apod?'<div class="tip-row">👤 '+apod+'</div>':'')
+    +(fono?'<div class="tip-row">📞 '+fono+'</div>':'')
+    +(tema?'<div class="tip-row">🎨 '+tema+'</div>':'')
+    +'<div class="tip-div"></div>'
+    +'<div class="tip-st '+(saldo>0?'pend':'ok')+'">'+(saldo>0?'⚠ Saldo: '+fmtM(saldo):'✓ Pagado')+'</div>';
+  _tip.style.display='flex';
+  // Posicionar inteligente
+  var r=el.getBoundingClientRect();
+  var tw=_tip.offsetWidth||220;var th=_tip.offsetHeight||120;
+  var vw=window.innerWidth;var vh=window.innerHeight;
+  var left=r.right+8;var top=r.top;
+  if(left+tw>vw-8)left=r.left-tw-8;
+  if(left<8)left=8;
+  if(top+th>vh-8)top=vh-th-8;
+  if(top<8)top=8;
+  _tip.style.left=left+'px';_tip.style.top=top+'px';
+}
+function hideTip(){if(_tip)_tip.style.display='none';}
 function calClick(iso){openNueva(null,iso);}
 
 function renderSeg(){
