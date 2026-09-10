@@ -133,50 +133,55 @@ textarea { resize: vertical; min-height: 60px; }
 /* ── CALENDAR ── */
 /* ── CALENDARIO REDISEÑADO v2 ──────────────────────────── */
 /* ── CALENDARIO ─────────────────────────────────────────── */
-.cal-nav-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--navy);color:#fff;border-radius:var(--radius) var(--radius) 0 0}
-.cal-btn{background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;font-size:16px;padding:4px 12px;border-radius:5px}
+/* ── CALENDARIO LIMPIO CON TOOLTIP ─── */
+.cal-nav-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:var(--navy);color:#fff;border-radius:var(--radius) var(--radius) 0 0}
+.cal-btn{background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;font-size:18px;padding:2px 12px;border-radius:5px;line-height:1.6}
 .cal-btn:hover{background:rgba(255,255,255,0.2)}
 .cal-month{font-size:15px;font-weight:700}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-top:none;background:var(--white);border-radius:0 0 var(--radius) var(--radius);overflow:hidden;grid-auto-rows:minmax(140px,1fr)}
-.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:7px 3px;background:#fafafa;border-bottom:1px solid var(--border)}
-.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;position:relative;display:flex;flex-direction:column;background:#fff}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-top:none;background:var(--white);border-radius:0 0 var(--radius) var(--radius);overflow:hidden;grid-auto-rows:minmax(0,1fr)}
+.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 3px;background:#fafafa;border-bottom:1px solid var(--border)}
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;display:flex;flex-direction:column;background:#fff;min-height:90px;overflow:visible;position:relative}
 .cal-cell:nth-child(7n){border-right:none}
+.cal-cell:hover{background:#f9fbff}
 .cal-cell.other-month{background:#fafafa}
-.cal-cell.other-month .cal-day-num{color:#d0d0d0}
-.cal-cell.today{background:#FFFEF5}
-.cal-cell.today .cal-day-num-wrap{position:relative}
-.cal-day-num{font-size:11px;font-weight:700;color:#aaa;padding:5px 7px 3px;line-height:1;flex-shrink:0}
+.cal-cell.other-month .cal-day-num{color:#ccc}
 .cal-cell.today .cal-day-num{color:var(--primary-dark)}
-.today-dot{display:inline-flex;background:var(--primary);color:#fff;border-radius:50%;width:20px;height:20px;align-items:center;justify-content:center;font-size:11px;font-weight:700}
-/* Slots: solo visible cuando hay contenido */
-.cal-slots{flex:1;display:flex;flex-direction:column}
-.cal-slot{position:relative;flex:1;overflow:hidden}
-.cal-slot.has-ev{border-top:2px solid transparent}
-.cal-slot.slot-am.has-ev{border-top-color:#BFDBFE;background:rgba(219,234,254,0.15)}
-.cal-slot.slot-pm.has-ev{border-top-color:#FDE68A;background:rgba(254,243,199,0.15)}
-.cal-slot.slot-full.has-ev{border-top-color:#6EE7B7;background:rgba(209,250,229,0.2);flex:3}
-.cal-slot-lbl{font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:2px 5px;display:none}
-.cal-slot.has-ev .cal-slot-lbl{display:block}
-.cal-slot.slot-am .cal-slot-lbl{color:#2563EB}
-.cal-slot.slot-pm .cal-slot-lbl{color:#B45309}
-.cal-slot.slot-full .cal-slot-lbl{color:#047857}
-/* Tarjeta evento */
-.cev{margin:2px 4px 3px;border-radius:6px;padding:4px 6px 5px;cursor:pointer;border-left:3px solid transparent;transition:filter .12s}
-.cev:hover{filter:brightness(.93)}
+.cal-day-num{font-size:11px;font-weight:700;color:#aaa;padding:4px 6px 2px;line-height:1;flex-shrink:0}
+.today-dot{display:inline-flex;background:var(--primary);color:#fff;border-radius:50%;width:19px;height:19px;align-items:center;justify-content:center;font-size:10px;font-weight:800}
+/* Separador visual AM/PM solo cuando hay eventos */
+.cal-slots{flex:1;display:flex;flex-direction:column;gap:1px;padding:0 2px 2px}
+.cal-slot{display:flex;flex-direction:column;gap:1px}
+.cal-slot.slot-empty{display:none}
+/* Chip compacto del evento */
+.cev{border-radius:4px;padding:2px 5px;cursor:pointer;border-left:2px solid transparent;transition:filter .12s;position:relative;display:flex;align-items:center;gap:4px;min-width:0}
+.cev:hover{filter:brightness(.92)}
+.cev:hover .cev-tooltip{display:block}
 .cev.am-a{background:#DBEAFE;border-color:#3B82F6}
 .cev.am-b{background:#BFDBFE;border-color:#1D4ED8}
 .cev.pm-a{background:#FEF3C7;border-color:#F59E0B}
 .cev.pm-b{background:#FDE68A;border-color:#D97706}
 .cev.paseo{background:#D1FAE5;border-color:#10B981}
 .cev.otro{background:#F3F4F6;border-color:#9CA3AF}
-.cev-plan{font-size:8px;font-weight:700;opacity:.5;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
-.cev-nombre{font-size:11.5px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cev-apod{font-size:9px;color:rgba(0,0,0,.5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cev-fono{font-size:9px;color:rgba(0,0,0,.4);margin-top:1px}
-.cev-tema{font-size:9px;font-style:italic;color:rgba(0,0,0,.45);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cev-st{font-size:8.5px;margin-top:3px;font-weight:600}
-.cev-st.ok{color:#065F46}
-.cev-st.pend{color:#92400E}
+.cev-label{font-size:9px;font-weight:700;opacity:.55;flex-shrink:0;text-transform:uppercase;letter-spacing:.2px}
+.cev-name{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.cev-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.cev.am-a .cev-dot,.cev.am-b .cev-dot{background:#3B82F6}
+.cev.pm-a .cev-dot,.cev.pm-b .cev-dot{background:#F59E0B}
+.cev.paseo .cev-dot{background:#10B981}
+/* Señal de saldo pendiente */
+.cev.pend-flag::after{content:"⚠";font-size:8px;position:absolute;right:3px;top:1px;opacity:.7}
+/* Tooltip */
+.cev-tooltip{display:none;position:absolute;left:calc(100% + 6px);top:0;z-index:500;background:#1A2B4A;color:#fff;border-radius:8px;padding:10px 13px;min-width:200px;max-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;white-space:normal;line-height:1.5}
+.cev:last-child .cev-tooltip,.cev-tooltip.tip-left{left:auto;right:calc(100% + 6px)}
+.cev-tooltip::before{content:'';position:absolute;left:-5px;top:10px;border:5px solid transparent;border-right-color:#1A2B4A;border-left:none}
+.cev-tooltip.tip-left::before{left:auto;right:-5px;border-right:none;border-left:5px solid #1A2B4A}
+.tt-plan{font-size:10px;font-weight:700;opacity:.55;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.tt-nombre{font-size:14px;font-weight:800;margin-bottom:5px}
+.tt-row{font-size:11px;opacity:.75;display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.tt-divider{border-top:1px solid rgba(255,255,255,.15);margin:6px 0}
+.tt-status{font-size:11px;font-weight:700}
+.tt-status.ok{color:#6EE7B7}
+.tt-status.pend{color:#FCD34D}
 .import-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg); }
 .import-zone:hover, .import-zone.drag-over { border-color: var(--primary); background: var(--primary-light); }
 .import-zone .icon { font-size: 40px; display: block; margin-bottom: 12px; }
@@ -291,10 +296,10 @@ tbody tr.selected{background:var(--coral-light) !important}
 #panel-calendario .cal-dow{position:sticky;top:0;z-index:2}
 
 /* Slots: altura proporcional a contenido */
-.cal-slot.slot-am.has-ev{flex:1;min-height:60px}
-.cal-slot.slot-pm.has-ev{flex:1;min-height:60px}
-.cal-slot.slot-am:not(.has-ev){flex:0 0 6px;background:none}
-.cal-slot.slot-pm:not(.has-ev){flex:0 0 6px;background:none}
+
+
+
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -810,57 +815,65 @@ function renderCalendario(){
   const DOW=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   let h=DOW.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
 
-  function card(r){
+  // Chip compacto con tooltip
+  function chip(r,colIdx){
     const cls=getCalClass(r);
-    const plan=(r.plan||'').toUpperCase().replace('PASEO AM','Paseo AM').replace('PASEO PM','Paseo PM');
     const sl=pend(r);
-    return '<div class="cev '+cls+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')">'
-      +'<div class="cev-plan">'+plan+'</div>'
-      +'<div class="cev-nombre">'+(r.cumple||r.apoderado||'–')+'</div>'
-      +(r.apoderado&&r.cumple?'<div class="cev-apod">👤 '+r.apoderado+'</div>':'')
-      +(r.fono?'<div class="cev-fono">📞 '+r.fono+'</div>':'')
-      +(r.inv?'<div class="cev-tema">🎨 '+r.inv+'</div>':'')
-      +'<div class="cev-st '+(sl>0?'pend':'ok')+'">'+(sl>0?'⚠ Saldo '+fmtM(sl):'✓ Pagado')+'</div>'
+    const nombre=r.cumple||r.apoderado||'–';
+    const plan=(r.plan||'').replace('PASEO AM','Paseo AM').replace('PASEO PM','Paseo PM');
+    // Tooltip puede ir a izquierda si estamos en las últimas 2 columnas
+    const tipLeft=colIdx>=5;
+    const tooltip='<div class="cev-tooltip'+(tipLeft?' tip-left':'')+'">'
+      +'<div class="tt-plan">'+plan+'</div>'
+      +'<div class="tt-nombre">'+nombre+'</div>'
+      +(r.apoderado&&r.cumple?'<div class="tt-row">👤 '+r.apoderado+'</div>':'')
+      +(r.fono?'<div class="tt-row">📞 '+r.fono+'</div>':'')
+      +(r.inv?'<div class="tt-row">🎨 '+r.inv+'</div>':'')
+      +'<div class="tt-divider"></div>'
+      +'<div class="tt-status '+(sl>0?'pend':'ok')+'">'+(sl>0?'⚠ Saldo: '+fmtM(sl):'✓ Pagado')+'</div>'
+      +'</div>';
+    return '<div class="cev '+cls+(sl>0?' pend-flag':'')+'" onclick="event.stopPropagation();verReserva(\''+r.id+'\')">'
+      +'<span class="cev-dot"></span>'
+      +'<span class="cev-name">'+nombre+'</span>'
+      +tooltip
       +'</div>';
   }
 
-  function dayCell(d,iso,isOther,isHoy,evs){
+  function cell(d,iso,other,isHoy,evs,colIdx){
     const paseos=evs.filter(r=>getTipo(r)==='paseo');
     const ams=evs.filter(r=>getTipo(r)!=='paseo'&&(r.plan||'').toUpperCase().startsWith('AM'));
     const pms=evs.filter(r=>getTipo(r)!=='paseo'&&!(r.plan||'').toUpperCase().startsWith('AM'));
-
-    let out='<div class="cal-cell'+(isOther?' other-month':'')+(isHoy?' today':'')+'"'
+    const dayNum=isHoy?'<span class="today-dot">'+d+'</span>':d;
+    let out='<div class="cal-cell'+(other?' other-month':'')+(isHoy?' today':'')+'"'
       +(iso?' onclick="calClick(\''+iso+'\')"':'')+' >';
-
-    // Número del día
-    out+='<div class="cal-day-num">'+(isHoy?'<span class="today-dot">'+d+'</span>':d)+'</div>';
+    out+='<div class="cal-day-num">'+dayNum+'</div>';
     out+='<div class="cal-slots">';
-
     if(paseos.length){
-      const hasEv=true;
-      out+='<div class="cal-slot slot-full'+(hasEv?' has-ev':'')+'">';
-      out+='<div class="cal-slot-lbl">🚌 Día completo</div>';
-      paseos.forEach(function(r){out+=card(r);});
-      ams.concat(pms).forEach(function(r){out+=card(r);});
+      out+='<div class="cal-slot">';
+      paseos.forEach(function(r){out+=chip(r,colIdx);});
+      ams.concat(pms).forEach(function(r){out+=chip(r,colIdx);});
       out+='</div>';
     } else {
-      out+='<div class="cal-slot slot-am'+(ams.length?' has-ev':'')+'">';
-      if(ams.length) out+='<div class="cal-slot-lbl">AM</div>';
-      ams.forEach(function(r){out+=card(r);});
-      out+='</div>';
-      out+='<div class="cal-slot slot-pm'+(pms.length?' has-ev':'')+'">';
-      if(pms.length) out+='<div class="cal-slot-lbl">PM</div>';
-      pms.forEach(function(r){out+=card(r);});
-      out+='</div>';
+      if(ams.length){
+        out+='<div class="cal-slot">';
+        ams.forEach(function(r){out+=chip(r,colIdx);});
+        out+='</div>';
+      }
+      if(pms.length){
+        out+='<div class="cal-slot">';
+        pms.forEach(function(r){out+=chip(r,colIdx);});
+        out+='</div>';
+      }
     }
     out+='</div></div>';
     return out;
   }
 
-  // Celdas previas
+  // Celdas anteriores
   for(let i=0;i<pd;i++){
     const dd=new Date(y,m,1-pd+i);
-    h+=dayCell(dd.getDate(),'',true,false,[]);
+    const col=(i)%7;
+    h+=cell(dd.getDate(),'',true,false,[],col);
   }
   // Días del mes
   for(let d=1;d<=dm;d++){
@@ -868,12 +881,16 @@ function renderCalendario(){
     const iso=isoDate(f);
     const isH=f.getTime()===hoy.getTime();
     const evs=all.filter(r=>isoDate(r.fecha)===iso);
-    h+=dayCell(d,iso,false,isH,evs);
+    const col=(pd+d-1)%7;
+    h+=cell(d,iso,false,isH,evs,col);
   }
-  // Celdas posteriores
   const resto=(pd+dm)%7;
-  if(resto){for(let i=1;i<=7-resto;i++)h+=dayCell(i,'',true,false,[]);}
-
+  if(resto){
+    for(let i=1;i<=7-resto;i++){
+      const col=(pd+dm+i-1)%7;
+      h+=cell(i,'',true,false,[],col);
+    }
+  }
   document.getElementById('cal-grid').innerHTML=h;
 }
 function calClick(iso){openNueva(null,iso);}
