@@ -150,11 +150,11 @@ textarea { resize: vertical; min-height: 60px; }
 .today-dot{display:inline-flex;background:var(--primary);color:#fff;border-radius:50%;width:20px;height:20px;align-items:center;justify-content:center;font-size:11px;font-weight:700}
 /* Slots: solo visible cuando hay contenido */
 .cal-slots{flex:1;display:flex;flex-direction:column}
-.cal-slot{position:relative;flex:1}
+.cal-slot{position:relative;flex:1;overflow:hidden}
 .cal-slot.has-ev{border-top:2px solid transparent}
 .cal-slot.slot-am.has-ev{border-top-color:#BFDBFE;background:rgba(219,234,254,0.15)}
 .cal-slot.slot-pm.has-ev{border-top-color:#FDE68A;background:rgba(254,243,199,0.15)}
-.cal-slot.slot-full.has-ev{border-top-color:#6EE7B7;background:rgba(209,250,229,0.2);flex:2}
+.cal-slot.slot-full.has-ev{border-top-color:#6EE7B7;background:rgba(209,250,229,0.2);flex:3}
 .cal-slot-lbl{font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:2px 5px;display:none}
 .cal-slot.has-ev .cal-slot-lbl{display:block}
 .cal-slot.slot-am .cal-slot-lbl{color:#2563EB}
@@ -279,7 +279,7 @@ tbody tr.selected{background:var(--coral-light) !important}
 
 #panel-calendario.active{display:flex;flex-direction:column;height:calc(100vh - 60px);overflow:hidden}
 #panel-calendario .cal-nav-bar{flex-shrink:0}
-#panel-calendario .cal-grid{flex:1;overflow-y:auto;grid-auto-rows:minmax(0,1fr)}
+#panel-calendario .cal-grid{flex:1;overflow-y:auto;grid-auto-rows:minmax(120px,1fr)}
 #panel-calendario .cal-dow{flex-shrink:0}
 .cal-panel-wrap{display:flex;flex-direction:column;flex:1;overflow:hidden}
 
@@ -287,8 +287,14 @@ tbody tr.selected{background:var(--coral-light) !important}
 #panel-calendario{padding:0;height:calc(100vh - 57px);display:none;flex-direction:column;overflow:hidden}
 #panel-calendario.active{display:flex}
 #panel-calendario .cal-nav-bar{flex-shrink:0;border-radius:0}
-#panel-calendario .cal-grid{flex:1;overflow:hidden;border-radius:0;border-left:none;border-right:none;border-bottom:none;grid-auto-rows:minmax(0,1fr)}
+#panel-calendario .cal-grid{flex:1;overflow:hidden;border-radius:0;border-left:none;border-right:none;border-bottom:none;grid-auto-rows:minmax(120px,1fr)}
 #panel-calendario .cal-dow{position:sticky;top:0;z-index:2}
+
+/* Slots: altura proporcional a contenido */
+.cal-slot.slot-am.has-ev{flex:1;min-height:60px}
+.cal-slot.slot-pm.has-ev{flex:1;min-height:60px}
+.cal-slot.slot-am:not(.has-ev){flex:0 0 6px;background:none}
+.cal-slot.slot-pm:not(.has-ev){flex:0 0 6px;background:none}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -622,7 +628,7 @@ tbody tr.selected{background:var(--coral-light) !important}
     <div class="modal-body">
       <div class="form-section">Fecha y tipo</div>
       <div class="form-grid cols3" style="margin-bottom:14px">
-        <div class="field"><label>Fecha *</label><input type="date" id="r-fecha"></div>
+        <div class="field"><label>Fecha *</label><input type="date" id="r-fecha" onchange="updateDia()" oninput="updateDia()"></div>
         <div class="field"><label>Día</label><input type="text" id="r-dia" readonly></div>
         <div class="field"><label>Año</label><input type="text" id="r-anio" readonly></div>
       </div>
@@ -870,7 +876,7 @@ function renderCalendario(){
 
   document.getElementById('cal-grid').innerHTML=h;
 }
-function calClick(iso){document.getElementById('r-fecha').value=iso;updateDia();openNueva();}
+function calClick(iso){openNueva(null,iso);}
 
 function renderSeg(){
   let rs=[...S.reservas];
@@ -1038,9 +1044,9 @@ function loadImportLog(){
   el.innerHTML='<table><thead><tr><th>Fecha</th><th>Registros</th><th>Importados</th><th>Duplicados omitidos</th></tr></thead><tbody>'+S.importLogs.map(l=>'<tr><td>'+fmtF(new Date(l.fecha))+'</td><td>'+l.total+'</td><td style="color:var(--grass);font-weight:700">'+l.importados+'</td><td style="color:var(--text-muted)">'+(l.dupes||0)+'</td></tr>').join('')+'</tbody></table>';
 }
 
-function openNueva(r){
+function openNueva(r,fechaIso){
   S.editId=r?r.id:null;document.getElementById('modal-r-title').textContent=r?'✏️ Editar Reserva':'🎂 Nueva Reserva — '+LOCAL_NAME;
-  document.getElementById('r-fecha').value=r&&r.fecha?isoDate(r.fecha):isoDate(new Date());
+  document.getElementById('r-fecha').value=r&&r.fecha?isoDate(r.fecha):(fechaIso||isoDate(new Date()));
   document.getElementById('r-tipo').value=(r&&r.tipo)||'cumple';document.getElementById('r-plan').value=(r&&r.plan)||'PM A';
   document.getElementById('r-cumple').value=(r&&r.cumple)||'';document.getElementById('r-apoderado').value=(r&&r.apoderado)||'';
   document.getElementById('r-fono').value=(r&&r.fono)||'';document.getElementById('r-inv').value=(r&&r.inv)||'';
